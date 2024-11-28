@@ -15,6 +15,10 @@ const Navbar = () => {
     navigate("/auth", { state: { type } }); // navegar con type
   };
 
+  const handleOtherNavigation = (href: string) => {
+    if (href !== "#") navigate(href);
+  };
+
   return (
     <nav className="sticky top-0 z-50 py-3 bg-orange-400 border-b border-orange-400">
       <div className="container px-12 mx-auto relative text-sm text-black">
@@ -26,7 +30,10 @@ const Navbar = () => {
           <ul className="hidden lg:flex ml-14 space-x-12">
             {barItems.map((item, index) => (
               <li key={index}>
-                <a className="hover:opacity-75" href={item.href}>
+                <a
+                  className="hover:opacity-75"
+                  onClick={() => handleOtherNavigation(item.href)}
+                >
                   {item.label}{" "}
                 </a>
               </li>
@@ -57,7 +64,9 @@ const Navbar = () => {
             <ul>
               {barItems.map((item, index) => (
                 <li key={index} className="py-4 ">
-                  <a href={item.href}>{item.label}</a>
+                  <a onClick={() => handleOtherNavigation(item.href)}>
+                    {item.label}
+                  </a>
                 </li>
               ))}
             </ul>
