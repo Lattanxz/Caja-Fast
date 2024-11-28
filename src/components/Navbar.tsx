@@ -2,8 +2,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/imgs/logo_transparent cut.png";
-import { barItems } from "../assets/constants/index";
-
+import { barItems } from "../assets/constants";
 const Navbar = () => {
   const [mobileMenuIsOpen, setMobileMenuIsOpen] = useState(false);
   const navigate = useNavigate(); // Hook de react-router-dom
@@ -28,7 +27,7 @@ const Navbar = () => {
             {barItems.map((item, index) => (
               <li key={index}>
                 <a className="hover:opacity-75" href={item.href}>
-                  {item.label}
+                  {item.label}{" "}
                 </a>
               </li>
             ))}

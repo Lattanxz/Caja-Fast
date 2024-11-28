@@ -9,8 +9,8 @@ export const titleItems = [
 ];
 
 export const barItems = [
-  { label: "Sobre Nosotros", href: "#" },
-  { label: "Preguntas Frecuentes", href: "#" },
+  { label: "Cajas", href: "/boxes" },
+  { label: "Usuarios", href: "/users" },
   { label: "Soporte", href: "#" },
   { label: "Terminos y Condiciones", href: "#" },
 ];
