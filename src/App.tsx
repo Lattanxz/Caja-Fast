@@ -4,6 +4,9 @@ import StateBar from "./components/StateBar";
 import Information from "./components/Information";
 import BottomBar from "./components/BottomBar";
 import AuthForm from "./components/AuthForm";
+import ProfileForm from "./components/ProfileForm";
+import BoxesForm from "./components/BoxesForm";
+import AdminForm from "./components/AdminForm";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "./App.css";
 
@@ -28,6 +31,12 @@ function App() {
         />
 
         <Route path="/auth" element={<AuthForm />} />
+
+        <Route path="/boxes" element={<BoxesForm />} />
+
+        <Route path="/users" element={<AdminForm />} />
+
+        <Route path="/profile" element={<ProfileForm />} />
       </Routes>
     </Router>
   );

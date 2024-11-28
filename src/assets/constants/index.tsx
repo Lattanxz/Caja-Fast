@@ -42,3 +42,11 @@ export const informationItems = [
       "Nuestra misión es mejorar la eficiencia y precisión en el cierre de caja, brindando a los stands una herramienta confiable que facilita la administración y ahorra tiempo. Trabajamos para que puedas concentrarte en lo que realmente importa: hacer eficiente tu negocio.",
   },
 ];
+
+export const infoUser = [
+  { id: 1, name: "XXXXXXXXXX", email: "XXXXXXXXXX", role: "XXXXXXXXXX" },
+  { id: 2, name: "XXXXXXXXXX", email: "XXXXXXXXXX", role: "XXXXXXXXXX" },
+  { id: 3, name: "XXXXXXXXXX", email: "XXXXXXXXXX", role: "XXXXXXXXXX" },
+  { id: 4, name: "XXXXXXXXXX", email: "XXXXXXXXXX", role: "XXXXXXXXXX" },
+  { id: 5, name: "XXXXXXXXXX", email: "XXXXXXXXXX", role: "XXXXXXXXXX" },
+];
