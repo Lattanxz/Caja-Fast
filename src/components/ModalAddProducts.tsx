@@ -9,7 +9,6 @@ interface ModalAgregarProductosProps {
 const ModalAgregarProductos: React.FC<ModalAgregarProductosProps> = ({
   productsAvailable,
   onAddProducto,
-  onClose,
 }) => {
   return (
     <div>

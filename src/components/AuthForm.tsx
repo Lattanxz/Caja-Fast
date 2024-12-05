@@ -19,11 +19,12 @@ const AuthForm = () => {
     setForgotPassword(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    const form = e.target as HTMLFormElement;
     // Simulación de obtención de rol según correo electrónico
-    const email = e.target.email.value;
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
     const role = email.includes("admin") ? "admin" : "user";
 
     // Redirigir según el rol
