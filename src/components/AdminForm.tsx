@@ -1,5 +1,5 @@
-import { infoUser } from "../assets/constants";
-import { PlusCircle, Pencil, X, User } from "lucide-react";
+import { infoUser, User } from "../assets/constants";
+import { PlusCircle, Pencil, X } from "lucide-react";
 import { useState } from "react";
 import LoggedBar from "./LoggedBar";
 import ModalUser from "./ModalUser";
@@ -9,14 +9,17 @@ const AdminForm = () => {
   /* Constantes modal doble */
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"add" | "edit">("add");
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [users, setUsers] = useState(infoUser);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>(infoUser);
 
   /* Modal de confirmación */
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
-  const handleOpenModal = (action: "add" | "edit", user: any = null) => {
+  const handleOpenModal = (
+    action: "add" | "edit",
+    user: User | null = null
+  ) => {
     setModalAction(action);
     setSelectedUser(user);
     setIsModalOpen(true);
@@ -27,7 +30,7 @@ const AdminForm = () => {
     setSelectedUser(null);
   };
 
-  const handleOpenDeleteModal = (user: any) => {
+  const handleOpenDeleteModal = (user: User) => {
     setUserToDelete(user);
     setIsDeleteModalOpen(true);
   };
@@ -38,8 +41,12 @@ const AdminForm = () => {
   };
 
   const handleDeleteUser = () => {
-    setUsers(users.filter((u) => u.id !== userToDelete.id));
-    handleCloseDeleteModal();
+    if (userToDelete) {
+      setUsers(users.filter((u) => u.id !== userToDelete.id));
+      handleCloseDeleteModal();
+    } else {
+      console.error("No user selected for deletion");
+    }
   };
 
   return (

@@ -43,7 +43,13 @@ export const informationItems = [
   },
 ];
 
-export const infoUser = [
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+}
+export const infoUser: User[] = [
   { id: 1, name: "Valerio", email: "zxccxzzx", role: "user" },
   { id: 2, name: "Armando", email: "xczcxzcxz", role: "admin" },
   { id: 3, name: "Joderio", email: "zcxxcxz", role: "user" },

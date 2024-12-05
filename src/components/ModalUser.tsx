@@ -15,6 +15,7 @@ const UserForm = ({
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
     const role = formData.get("role") as string;
+
     onSubmit({ name, email, role });
   };
 

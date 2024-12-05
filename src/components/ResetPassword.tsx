@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Notification from "./NotificationMessage";
 
-const ResetPassword = ({ onBack }) => {
+const ResetPassword = ({ onBack }: { onBack: () => void }) => {
   const [verificationStep, setVerificationStep] = useState(1);
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");

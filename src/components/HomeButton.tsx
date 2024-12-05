@@ -1,6 +1,11 @@
 import { useNavigate } from "react-router-dom";
+import { ReactNode } from "react";
 
-const HomeButton = ({ children }) => {
+interface HomeButtonProps {
+  children: ReactNode;
+}
+
+const HomeButton = ({ children }: HomeButtonProps) => {
   const navigate = useNavigate();
   const handleHomeClick = () => {
     navigate("/");

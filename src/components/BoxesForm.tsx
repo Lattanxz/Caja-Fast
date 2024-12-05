@@ -16,6 +16,7 @@ const BoxesForm = () => {
     | "cargarLista"
     | "crearLista"
     | "agregarProductos"
+    | null
   >(null);
 
   const handleProductsManagement = (
