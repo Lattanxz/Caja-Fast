@@ -33,7 +33,7 @@ export const informationItems = [
     image: cajaReg,
     text: "Sobre nosotros",
     description:
-      "El objetivo de nuestro programa nace al observar que muchos puestos de feria utilizan métodos manuales, lo cual resulta lento, propenso a errores y consume tiempo valioso. Por esA razón, desarrollamos una solución digital que permite a cada negocio gestionar su caja de manera virtual, automatizando los cálculos y agilizando el proceso.",
+      "El objetivo de nuestro programa nace al observar que muchos puestos de feria utilizan métodos manuales, lo cual resulta lento, propenso a errores y consume tiempo valioso. Por esa razón, desarrollamos una solución digital que permite a cada negocio gestionar su caja de manera virtual, automatizando los cálculos y agilizando el proceso.",
   },
   {
     image: mision,
@@ -44,9 +44,9 @@ export const informationItems = [
 ];
 
 export const infoUser = [
-  { id: 1, name: "XXXXXXXXXX", email: "XXXXXXXXXX", role: "XXXXXXXXXX" },
-  { id: 2, name: "XXXXXXXXXX", email: "XXXXXXXXXX", role: "XXXXXXXXXX" },
-  { id: 3, name: "XXXXXXXXXX", email: "XXXXXXXXXX", role: "XXXXXXXXXX" },
-  { id: 4, name: "XXXXXXXXXX", email: "XXXXXXXXXX", role: "XXXXXXXXXX" },
-  { id: 5, name: "XXXXXXXXXX", email: "XXXXXXXXXX", role: "XXXXXXXXXX" },
+  { id: 1, name: "Valerio", email: "zxccxzzx", role: "user" },
+  { id: 2, name: "Armando", email: "xczcxzcxz", role: "admin" },
+  { id: 3, name: "Joderio", email: "zcxxcxz", role: "user" },
+  { id: 4, name: "Clamerio", email: "cxczc", role: "user" },
+  { id: 5, name: "Supuestio", email: "xdd", role: "user" },
 ];

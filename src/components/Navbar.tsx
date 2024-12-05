@@ -25,11 +25,13 @@ const Navbar = () => {
         <div className="flex justify-between items-center">
           <div className="flex items-center flex-shrink-0">
             <img src={logo} alt="logo" className="w-20 mr-2" />
-            <p className="text-xl tracking-tight text-black">CAJA FAST</p>
+            <p className="text-xl tracking-tight text-black cursor-default">
+              CAJA FAST
+            </p>
           </div>
-          <ul className="hidden lg:flex ml-14 space-x-12">
+          <ul className="hidden lg:flex ml-14 space-x-12 ">
             {barItems.map((item, index) => (
-              <li key={index}>
+              <li key={index} className="hover:cursor-pointer">
                 <a
                   className="hover:opacity-75"
                   onClick={() => handleOtherNavigation(item.href)}

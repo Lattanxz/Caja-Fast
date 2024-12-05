@@ -1,11 +1,84 @@
 import { PlusCircle, Trash2, Settings, Info } from "lucide-react";
+import { useState } from "react";
 import LoggedBar from "./LoggedBar";
+import ModalReusable from "./ModalReusable";
+import ModalLoadList from "./ModalLoadList";
+import ModalCreateList from "./ModalCreateList";
+import ModalAddProducts from "./ModalAddProducts";
 
-const CajaManagement = () => {
-  const cajas = Array.from({ length: 8 }, (_, i) => ({
-    id: i + 1,
-    ultimaApertura: "XX-XX-XXXX",
-  }));
+const BoxesForm = () => {
+  /* Estado para manejar los modales */
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState<
+    | "agregar"
+    | "detalles"
+    | "gestionar"
+    | "cargarLista"
+    | "crearLista"
+    | "agregarProductos"
+  >(null);
+
+  const handleProductsManagement = (
+    opcion: "cargarLista" | "crearLista" | "agregarProductos"
+  ) => {
+    setModalContent(opcion);
+  };
+
+  const [listasPredeterminadas] = useState([
+    { id: 1, nombre: "Lista Predeterminada 1" },
+    { id: 2, nombre: "Lista Predeterminada 2" },
+    { id: 3, nombre: "Lista Predeterminada 3" },
+  ]);
+
+  const [productsAvailable] = useState([
+    "Producto A",
+    "Producto B",
+    "Producto C",
+    "Producto D",
+  ]);
+
+  const [selectedCaja, setSelectedCaja] = useState<number | null>(null);
+
+  /* Estado para registrar la última apertura de cada caja */
+  const [cajas, setCajas] = useState(
+    Array.from({ length: 8 }, (_, i) => ({
+      id: i + 1,
+      ultimaApertura: "XX-XX-XXXX",
+    }))
+  );
+
+  /* Abrir modal según acción */
+  const handleOpenModal = (
+    type: "agregar" | "detalles" | "gestionar",
+    cajaId?: number
+  ) => {
+    setModalContent(type);
+    setSelectedCaja(cajaId || null);
+
+    // Actualizar la última apertura al presionar "Ver Detalles" o "Gestionar"
+    if (cajaId && (type === "detalles" || type === "gestionar")) {
+      const fechaActual = new Date().toLocaleDateString(); // Fecha en formato DD/MM/AAAA
+      setCajas((prevCajas) =>
+        prevCajas.map((caja) =>
+          caja.id === cajaId ? { ...caja, ultimaApertura: fechaActual } : caja
+        )
+      );
+    }
+
+    setIsModalOpen(true);
+  };
+
+  /* Cerrar modal */
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalContent(null);
+    setSelectedCaja(null);
+  };
+
+  /* Eliminar una caja específica */
+  const handleDeleteCaja = (cajaId: number) => {
+    setCajas((prevCajas) => prevCajas.filter((caja) => caja.id !== cajaId));
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -19,13 +92,108 @@ const CajaManagement = () => {
             <h1 className="text-center text-white text-2xl font-bold">
               GESTIÓN DE CAJAS
             </h1>
-            <button className="bg-orange-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-orange-500">
+            <button
+              className="bg-orange-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-orange-500"
+              onClick={() => handleOpenModal("agregar")}
+            >
               AGREGAR CAJA
               <PlusCircle className="ml-2 w-5 h-5" />
             </button>
           </div>
         </div>
       </header>
+
+      {/* Modal */}
+      <ModalReusable
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={
+          modalContent === "agregar"
+            ? "GESTIÓN DE PRODUCTOS"
+            : modalContent === "cargarLista"
+            ? "Cargar Lista de Productos"
+            : modalContent === "crearLista"
+            ? "Crear Nueva Lista"
+            : modalContent === "agregarProductos"
+            ? "Agregar Productos Manualmente"
+            : modalContent === "detalles"
+            ? `Detalles de la Caja ${selectedCaja}`
+            : modalContent === "gestionar"
+            ? `Gestionar Caja ${selectedCaja}`
+            : "Modal"
+        }
+      >
+        {/* Contenido dinámico según el modal */}
+        {modalContent === "agregar" && (
+          <div className="space-y-4 p-4">
+            <p className="mb-6 text-center">
+              ELIGÍ UNA OPCIÓN PARA GESTIONAR TUS CAJAS
+            </p>
+            <button
+              className="bg-orange-400 text-black  w-full py-2 rounded hover:bg-orange-500"
+              onClick={() => handleProductsManagement("cargarLista")}
+            >
+              CARGAR LISTA DE PRODUCTOS EXISTENTE
+            </button>
+            <button
+              className="bg-orange-400 text-black w-full py-2 rounded-lg hover:bg-orange-500"
+              onClick={() => handleProductsManagement("crearLista")}
+            >
+              CREAR NUEVA LISTA DE PRODUCTOS
+            </button>
+            <button
+              className="bg-orange-400 text-black w-full py-2 rounded-lg hover:bg-orange-500"
+              onClick={() => handleProductsManagement("agregarProductos")}
+            >
+              AGREGAR PRODUCTOS MANUALMENTE
+            </button>
+          </div>
+        )}
+        {modalContent === "detalles" && (
+          <div>
+            <h3 className="text-lg font-bold mb-4">Productos en la caja</h3>
+            <ul className="list-disc pl-4">
+              <li>Producto 1</li>
+              <li>Producto 2</li>
+              <li>Producto 3</li>
+            </ul>
+          </div>
+        )}
+        {modalContent === "gestionar" && (
+          <div>
+            <h3 className="text-lg font-bold mb-4">Opciones de gestión</h3>
+            <button className="bg-orange-400 text-black w-full py-2 rounded-lg hover:bg-orange-500 mb-4">
+              Agregar Producto
+            </button>
+            <button className="bg-orange-400 text-black w-full py-2 rounded-lg hover:bg-orange-500">
+              Eliminar Producto
+            </button>
+          </div>
+        )}
+        {modalContent === "cargarLista" && (
+          <ModalLoadList
+            listasPredeterminadas={listasPredeterminadas}
+            onClose={handleCloseModal}
+          />
+        )}
+        {modalContent === "crearLista" && (
+          <ModalCreateList
+            onSave={(name, products) => {
+              console.log("Nueva lista creada:", name, products);
+            }}
+            onClose={handleCloseModal}
+          />
+        )}
+        {modalContent === "agregarProductos" && (
+          <ModalAddProducts
+            productsAvailable={productsAvailable}
+            onAddProducto={(products) => {
+              console.log("Producto agregado:", products);
+            }}
+            onClose={handleCloseModal}
+          />
+        )}
+      </ModalReusable>
 
       {/* Contenedor de cajas */}
       <main className="flex-grow container mx-auto px-4 py-6">
@@ -40,16 +208,25 @@ const CajaManagement = () => {
                 ULTIMA APERTURA: {caja.ultimaApertura}
               </p>
               <div className="flex space-x-2 mb-4">
-                <button className="bg-orange-400 text-black px-3 py-2 rounded-lg hover:bg-orange-500 flex items-center">
+                <button
+                  className="bg-orange-400 text-black px-3 py-2 rounded-lg hover:bg-orange-500 flex items-center"
+                  onClick={() => handleOpenModal("detalles", caja.id)}
+                >
                   <Info className="w-4 h-4 mr-2" />
                   VER DETALLES
                 </button>
-                <button className="bg-orange-400 text-black px-3 py-2 rounded-lg hover:bg-orange-500 flex items-center">
+                <button
+                  className="bg-orange-400 text-black px-3 py-2 rounded-lg hover:bg-orange-500 flex items-center"
+                  onClick={() => handleOpenModal("gestionar", caja.id)}
+                >
                   <Settings className="w-4 h-4 mr-2" />
                   GESTIONAR
                 </button>
               </div>
-              <button className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center">
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center"
+                onClick={() => handleDeleteCaja(caja.id)}
+              >
                 <Trash2 className="w-4 h-4 mr-2" />
                 ELIMINAR
               </button>
@@ -66,4 +243,4 @@ const CajaManagement = () => {
   );
 };
 
-export default CajaManagement;
+export default BoxesForm;

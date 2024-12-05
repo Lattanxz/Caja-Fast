@@ -4,7 +4,7 @@ const StateBar = () => {
       <div className="container px-12 mx-auto relative text-sm text-black">
         <div className="flex justify-center">
           <div className="flex items-center flex-shrink-0">
-            <h1 className="text-4xl tracking-tight text-black">
+            <h1 className="text-4xl sm:text-2xl lg:text-4xl tracking-tight text-black">
               LA MEJOR MANERA DE CERRAR DE TUS CAJAS
             </h1>
           </div>

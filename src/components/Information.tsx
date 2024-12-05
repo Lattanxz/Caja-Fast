@@ -17,7 +17,7 @@ const Information = () => {
                 {item.description}
               </p>
             </div>
-            <div className="lg:w-1/3 flex justify-center lg:justify-end mr-20 lg:mt-0 lg:ml-2">
+            <div className="lg:w-1/3 flex justify-center lg:justify-end mr-20 lg:mt-0 lg:ml-2 ">
               <img
                 src={item.image}
                 alt="#"
