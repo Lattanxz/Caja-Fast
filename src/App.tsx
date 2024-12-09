@@ -18,7 +18,7 @@ function App() {
           path="/"
           element={
             <>
-              <Navbar />
+              <Navbar isLoggedIn={false} />
               <div className="relative bg-bodyImage bg-cover bg-center h-[90vh] w-screen mx-auto pt-4">
                 <div className="absolute inset-0 bg-white opacity-60"></div>
                 <Body />

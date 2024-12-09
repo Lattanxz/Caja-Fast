@@ -1,6 +1,6 @@
-import { PlusCircle, Trash2, Settings, Info } from "lucide-react";
+import { PlusCircle, Trash2, Settings, Info, X } from "lucide-react";
 import { useState } from "react";
-import LoggedBar from "./LoggedBar";
+import NavBar from "./Navbar";
 import ModalReusable from "./ModalReusable";
 import ModalLoadList from "./ModalLoadList";
 import ModalCreateList from "./ModalCreateList";
@@ -16,6 +16,7 @@ const BoxesForm = () => {
     | "cargarLista"
     | "crearLista"
     | "agregarProductos"
+    | "cerrarCaja"
     | null
   >(null);
 
@@ -84,7 +85,7 @@ const BoxesForm = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       {/* Barra de navegación */}
-      <LoggedBar />
+      <NavBar isLoggedIn={true} />
 
       {/* Título principal */}
       <header className="bg-black py-4">
@@ -152,17 +153,21 @@ const BoxesForm = () => {
         )}
         {modalContent === "detalles" && (
           <div>
-            <h3 className="text-lg font-bold mb-4">Productos en la caja</h3>
+            <h3 className="text-lg font-bold mb-4 text-center">
+              Productos en la caja
+            </h3>
             <ul className="list-disc pl-4">
-              <li>Producto 1</li>
-              <li>Producto 2</li>
-              <li>Producto 3</li>
+              <li className="py-1">Producto 1</li>
+              <li className="py-1">Producto 2</li>
+              <li className="py-1">Producto 3</li>
             </ul>
           </div>
         )}
         {modalContent === "gestionar" && (
           <div>
-            <h3 className="text-lg font-bold mb-4">Opciones de gestión</h3>
+            <h3 className="text-lg font-bold mb-4 justify-center">
+              Opciones de gestión
+            </h3>
             <button className="bg-orange-400 text-black w-full py-2 rounded-lg hover:bg-orange-500 mb-4">
               Agregar Producto
             </button>
@@ -224,13 +229,22 @@ const BoxesForm = () => {
                   GESTIONAR
                 </button>
               </div>
-              <button
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center"
-                onClick={() => handleDeleteCaja(caja.id)}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                ELIMINAR
-              </button>
+              <div className="flex space-x-2 mb-4">
+                <button
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center"
+                  onClick={() => handleDeleteCaja(caja.id)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  ELIMINAR
+                </button>
+                <button
+                  className="bg-orange-400 text-black px-3 py-2 rounded-lg hover:bg-orange-500 flex items-center"
+                  onClick={() => handleOpenModal("gestionar", caja.id)}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  CERRAR CAJA
+                </button>
+              </div>
             </div>
           ))}
         </div>

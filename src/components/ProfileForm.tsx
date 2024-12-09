@@ -1,15 +1,23 @@
-import LoggedBar from "./LoggedBar";
+import Navbar from "./Navbar";
 import { Upload, Pencil, Bolt, Check } from "lucide-react";
 
 const ProfileForm = () => {
   return (
     <>
       {/* Barra (pronto a transformar en ) */}
-      <LoggedBar />
+      <Navbar isLoggedIn={true} />
       {/* Titulo y div main */}
-      <main className="flex flex-col items-center justify-center mt-8">
-        <h2 className="text-3xl font-semibold mb-6">PERFIL</h2>
+      <header className="bg-black py-4">
+        <div className="container px-12 mx-auto relative text-sm text-black">
+          <div className="flex justify-between items-center">
+            <h1 className="text-center text-white text-2xl font-bold">
+              PERFIL
+            </h1>
+          </div>
+        </div>
+      </header>
 
+      <main className="flex flex-col items-center justify-center mt-8">
         {/* Formulario del perfil */}
         <div className="bg-black text-white p-8 rounded-lg shadow-lg w-full max-w-md border-4 border-orange-400">
           {/* Imagen del perfil */}

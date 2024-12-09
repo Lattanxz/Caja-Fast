@@ -1,7 +1,7 @@
 import { infoUser, User } from "../assets/constants";
 import { PlusCircle, Pencil, X } from "lucide-react";
 import { useState } from "react";
-import LoggedBar from "./LoggedBar";
+import Navbar from "./Navbar";
 import ModalUser from "./ModalUser";
 import ModalReusable from "./ModalReusable";
 
@@ -52,7 +52,7 @@ const AdminForm = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Barra de navegación */}
-      <LoggedBar />
+      <Navbar isLoggedIn={true} />
       <header className="bg-black py-4">
         <div className="container px-12 mx-auto relative text-sm text-black">
           <div className="flex justify-between items-center">
