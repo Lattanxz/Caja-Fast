@@ -1,22 +1,26 @@
-import React from "react";
-
 const UserForm = ({
   modalAction,
   selectedUser,
   onSubmit,
 }: {
   modalAction: "add" | "edit";
-  selectedUser: any;
-  onSubmit: (data: { name: string; email: string; role: string }) => void;
+  selectedUser: any; // Tipo de usuario según el modelo
+  onSubmit: (data: {
+    nombre_usuario: string;
+    email_usuario: string;
+    rol_usuario: string;
+    password: string; // Agregar password aquí
+  }) => void; // Cambié los nombres de las propiedades
 }) => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const role = formData.get("role") as string;
+    const nombre_usuario = formData.get("name") as string;
+    const email_usuario = formData.get("email") as string;
+    const rol_usuario = formData.get("role") as string;
+    const password = formData.get("password") as string; // Obtener el valor de la contraseña
 
-    onSubmit({ name, email, role });
+    onSubmit({ nombre_usuario, email_usuario, rol_usuario, password }); // Ahora se incluye la contraseña
   };
 
   return (
@@ -29,7 +33,9 @@ const UserForm = ({
           type="text"
           id="name"
           name="name"
-          defaultValue={modalAction === "edit" ? selectedUser?.name : ""}
+          defaultValue={
+            modalAction === "edit" ? selectedUser?.nombre_usuario : ""
+          }
           className="w-full border border-gray-300 rounded p-2 text-black"
         />
       </div>
@@ -41,7 +47,9 @@ const UserForm = ({
           type="email"
           id="email"
           name="email"
-          defaultValue={modalAction === "edit" ? selectedUser?.email : ""}
+          defaultValue={
+            modalAction === "edit" ? selectedUser?.email_usuario : ""
+          }
           className="w-full border border-gray-300 rounded p-2 text-black"
         />
       </div>
@@ -52,12 +60,27 @@ const UserForm = ({
         <select
           id="role"
           name="role"
-          defaultValue={modalAction === "edit" ? selectedUser?.role : "user"}
+          defaultValue={
+            modalAction === "edit" ? selectedUser?.rol_usuario : "user"
+          }
           className="w-full border border-gray-300 rounded p-2 text-black"
         >
-          <option value="admin">Administrador</option>
-          <option value="user">Usuario</option>
+          <option value="administrador">Administrador</option>
+          <option value="usuario">Usuario</option>
         </select>
+      </div>
+      {/* Campo de contraseña */}
+      <div>
+        <label htmlFor="password" className="block">
+          Contraseña
+        </label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          defaultValue={modalAction === "edit" ? selectedUser?.password : ""}
+          className="w-full border border-gray-300 rounded p-2 text-black"
+        />
       </div>
       <div className="flex">
         <button

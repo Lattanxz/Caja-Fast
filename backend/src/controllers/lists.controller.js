@@ -202,10 +202,110 @@ const removeList = async (req, res) => {
   }
 };
 
+const getAllLists = async (req, res) => {
+  try {
+    // Consulta para obtener listas y sus productos en una sola operación
+    const query = `
+      SELECT 
+        l.id_lista, 
+        l.nombre_lista, 
+        p.id_producto, 
+        p.nombre_producto
+      FROM listas l
+      LEFT JOIN productos_listas pl ON l.id_lista = pl.id_lista
+      LEFT JOIN productos p ON pl.id_producto = p.id_producto
+      ORDER BY l.id_lista, p.nombre_producto;
+    `;
+    const result = await pool.query(query);
+
+    // Transformar los datos para agrupar productos por lista
+    const listsWithProducts = result.rows.reduce((acc, row) => {
+      const { id_lista, nombre_lista, id_producto, nombre_producto } = row;
+
+      // Verificar si la lista ya existe en el acumulador
+      let list = acc.find((l) => l.id_lista === id_lista);
+      if (!list) {
+        list = { id_lista, nombre_lista, productos: [] };
+        acc.push(list);
+      }
+
+      // Agregar el producto si existe
+      if (id_producto) {
+        list.productos.push({ id_producto, nombre_producto });
+      }
+
+      return acc;
+    }, []);
+
+    res.status(200).json(listsWithProducts);
+  } catch (error) {
+    console.error("Error al obtener las listas y sus productos:", error);
+    res.status(500).json({ message: "Error al obtener las listas", error });
+  }
+};
+
+const generateList = async (req, res) => {
+  console.log("Datos recibidos en el backend:", req.body);
+  console.log("ID del usuario extraído del token:", req.user.id_usuario);
+  console.log("Datos recibidos en el backend:", req.body); // Verifica que el cuerpo de la solicitud llegue bien
+  console.log("ID del usuario extraído del token:", req.user.id_usuario); // Verifica que el ID del usuario esté correcto}
+  console.log("Token recibido:", req.headers["authorization"]);
+  console.log("Datos del cuerpo:", req.body);
+  console.log("Usuario del token:", req.user);
+
+  const { nombre_lista } = req.body;
+  const { id_usuario } = req.user; // Extraemos el id_usuario del token (req.user)
+
+  if (!nombre_lista) {
+    return res
+      .status(400)
+      .json({ error: "El nombre de la lista es obligatorio" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN"); // Inicia la transacción
+
+    // Crear la lista
+    const insertListQuery = `
+        INSERT INTO listas (nombre_lista, fecha_creacion, estado_seguridad)
+        VALUES ($1, NOW(), true)
+        RETURNING id_lista, fecha_creacion, estado_seguridad;
+      `;
+    const result = await client.query(insertListQuery, [nombre_lista]);
+
+    const id_lista = result.rows[0].id_lista;
+
+    // Insertar el id_usuario en listas_usuarios
+    const insertListUserQuery = `
+        INSERT INTO listas_usuario (id_lista, id_usuario)
+        VALUES ($1, $2);
+      `;
+    await client.query(insertListUserQuery, [id_lista, id_usuario]);
+
+    await client.query("COMMIT"); // Confirma la transacción
+
+    res.status(201).json({
+      id_lista: result.rows[0].id_lista,
+      nombre_lista,
+      fecha_creacion: result.rows[0].fecha_creacion,
+      estado_seguridad: result.rows[0].estado_seguridad,
+    });
+  } catch (err) {
+    await client.query("ROLLBACK"); // Si algo falla, deshace la transacción
+    console.error("Error al crear la lista:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  } finally {
+    client.release(); // Libera el cliente
+  }
+};
+
 module.exports = {
   createList,
   addProductToList,
   getProductsFromList,
   removeProductFromList,
   removeList,
+  getAllLists,
+  generateList,
 };

@@ -13,10 +13,25 @@ const swaggerDefinition = {
       description: "Servidor local",
     },
   ],
+  components: {
+    securitySchemes: {
+      BearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+      },
+    },
+  },
+  security: [
+    {
+      BearerAuth: [],
+    },
+  ],
 };
+
 const options = {
   swaggerDefinition,
-  apis: ["./src/routes/*.js"],
+  apis: ["./src/routes/*.js"], // Aquí se indican las rutas donde Swagger buscará los comentarios de los endpoints
 };
 
 const swaggerSpec = swaggerJSDoc(options);

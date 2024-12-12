@@ -2,10 +2,15 @@ const pool = require("../config/db");
 
 // Obtener todos los productos
 const getAllProducts = async (req, res) => {
-  const query = "SELECT * FROM Productos;";
+  const query = "SELECT nombre_producto FROM productos;"; // Seleccionamos solo los nombres de los productos
   try {
     const result = await pool.query(query);
-    res.status(200).json(result.rows);
+
+    // Extraemos solo los nombres de los productos
+    const productos = result.rows.map((row) => row.nombre_producto);
+
+    // Enviamos el arreglo de nombres de productos como respuesta JSON
+    res.status(200).json(productos);
   } catch (err) {
     console.error(err);
     res.status(500).json({ mensaje: "Error al obtener los productos" });

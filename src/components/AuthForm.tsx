@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // Importa el hook de contexto
 import HomeButton from "./HomeButton";
 import ResetPassword from "./ResetPassword";
 import authImage from "../assets/imgs/camarera-con-caja-registradora.jpeg";
@@ -8,7 +8,9 @@ import logo from "../assets/imgs/logo_transparent cut.png";
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [forgotPassword, setForgotPassword] = useState(false);
-  const navigate = useNavigate();
+
+  // Accede al contexto de autenticación
+  const { setIsLoggedIn, setUserRole } = useAuth();
 
   const toggleAuthForm = () => {
     setIsLogin(!isLogin);
@@ -19,19 +21,44 @@ const AuthForm = () => {
     setForgotPassword(true);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); // Prevenir el comportamiento predeterminado del formulario
 
-    const form = e.target as HTMLFormElement;
-    // Simulación de obtención de rol según correo electrónico
-    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
-    const role = email.includes("admin") ? "admin" : "user";
+    const email_usuario = (e.target as HTMLFormElement).email_usuario.value;
+    const password = (e.target as HTMLFormElement).password.value;
 
-    // Redirigir según el rol
-    if (role === "admin") {
-      navigate("/users");
-    } else {
-      navigate("/boxes");
+    try {
+      const response = await fetch("http://localhost:3000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email_usuario, password }),
+      });
+
+      const data = await response.json();
+      console.log(data);
+      if (response.ok) {
+        console.log("Login exitoso:", data);
+
+        // Guardar el token en localStorage
+        localStorage.setItem("token", data.token);
+
+        // Actualizar el estado de autenticación en el contexto
+        setIsLoggedIn(true);
+        setUserRole(data.role); // Guardar el rol del usuario en el contexto
+
+        // Redirigir según el rol
+        window.location.href = data.redirect;
+      } else {
+        console.error("Error al iniciar sesión:", data.mensaje);
+        alert(data.mensaje); // Mostrar mensaje de error al usuario
+      }
+    } catch (err) {
+      console.error("Error al conectar con el servidor:", err);
+      alert(
+        "Error al conectar con el servidor. Por favor, intenta nuevamente."
+      );
     }
   };
 
@@ -81,14 +108,17 @@ const AuthForm = () => {
                   </div>
                 )}
                 <div className="mb-4">
-                  <label className="block mb-1 font-light" htmlFor="email">
+                  <label
+                    className="block mb-1 font-light"
+                    htmlFor="email_usuario"
+                  >
                     Email o Nombre de usuario:
                   </label>
                   <input
                     type="email"
                     placeholder="nombre@mail.com"
-                    id="email"
-                    name="email"
+                    id="email_usuario"
+                    name="email_usuario"
                     className="w-full px-3 py-2 border rounded-lg"
                   />
                 </div>

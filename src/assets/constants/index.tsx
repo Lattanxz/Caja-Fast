@@ -41,16 +41,50 @@ export const informationItems = [
   },
 ];
 
+// src/assets/constants/index.tsx
+
 export interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
+  id_usuario: number;
+  nombre_usuario: string;
+  email_usuario: string;
+  password: string;
+  rol_usuario: string;
 }
+
 export const infoUser: User[] = [
-  { id: 1, name: "Valerio", email: "zxccxzzx", role: "user" },
-  { id: 2, name: "Armando", email: "xczcxzcxz", role: "admin" },
-  { id: 3, name: "Joderio", email: "zcxxcxz", role: "user" },
-  { id: 4, name: "Clamerio", email: "cxczc", role: "user" },
-  { id: 5, name: "Supuestio", email: "xdd", role: "user" },
+  {
+    id_usuario: 1,
+    nombre_usuario: "Valerio",
+    email_usuario: "zxccxzzx",
+    password: "contraseña",
+    rol_usuario: "user",
+  },
+  {
+    id_usuario: 2,
+    nombre_usuario: "Armando",
+    email_usuario: "xczcxzcxz",
+    password: "contraseña",
+    rol_usuario: "admin",
+  },
+  {
+    id_usuario: 3,
+    nombre_usuario: "Joderio",
+    email_usuario: "zcxxcxz",
+    password: "contraseña",
+    rol_usuario: "user",
+  },
+  {
+    id_usuario: 4,
+    nombre_usuario: "Clamerio",
+    email_usuario: "cxczc",
+    password: "contraseña",
+    rol_usuario: "user",
+  },
+  {
+    id_usuario: 5,
+    nombre_usuario: "Supuestio",
+    email_usuario: "xdd",
+    password: "contraseña",
+    rol_usuario: "user",
+  },
 ];

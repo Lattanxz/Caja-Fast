@@ -5,7 +5,10 @@ const {
   getProductsFromList,
   removeProductFromList,
   removeList,
+  getAllLists,
+  generateList,
 } = require("../controllers/lists.controller");
+const { authenticateToken } = require("../middleware/auth.middleware");
 const router = express.Router();
 
 /**
@@ -194,5 +197,11 @@ router.delete("/products", removeProductFromList);
  *         description: Error interno del servidor al eliminar la lista.
  */
 router.delete("/:id_lista", removeList);
+
+// Agarrar todas las listas y ponerlas en loadlist (NO TOCAR)
+router.get("/", getAllLists);
+
+// Generar una lista (NO TOCAR)
+router.post("/", authenticateToken, generateList);
 
 module.exports = router;

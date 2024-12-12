@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext"; // Importar el contexto de autenticación
 
 interface ModalCrearListaProps {
-  onSave: (nombre: string, productos: string[]) => void;
+  onSave: (nombre: string) => void;
   onClose: () => void;
 }
 
@@ -9,61 +11,76 @@ const ModalCrearLista: React.FC<ModalCrearListaProps> = ({
   onSave,
   onClose,
 }) => {
+  const { userId, token } = useAuth(); // Acceder al id_usuario y token del contexto
   const [nombre, setNombre] = useState("");
-  const [productos, setProductos] = useState<string[]>([]);
-  const [nuevoProducto, setNuevoProducto] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
 
-  const handleAddProducto = () => {
-    if (nuevoProducto.trim() !== "") {
-      setProductos([...productos, nuevoProducto.trim()]);
-      setNuevoProducto("");
+  console.log("Usuario de createList: ", userId);
+  // Manejar el guardado de la lista
+  const handleSave = async () => {
+    if (!nombre) {
+      setError("El nombre de la lista es obligatorio.");
+      return;
+    }
+
+    setLoading(true);
+    setError(""); // Limpiar el error previo
+
+    try {
+      const requestBody = { nombre_lista: nombre };
+      console.log("Token de autenticación:", token); // Verifica si el token está presente y es válido
+      console.log("Datos enviados al backend:", requestBody); // Verifica los datos aquí
+
+      // Realizar la solicitud POST para crear la lista con el nombre
+      await axios.post("http://localhost:3000/api/lists", requestBody, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Usando el token para autenticar la solicitud
+        },
+      });
+
+      // Si la solicitud es exitosa, ejecutar onSave y cerrar el modal
+      onSave(nombre);
+      onClose();
+    } catch (err) {
+      setError("Error al guardar la lista. Intenta nuevamente.");
+      console.error("Error al crear la lista:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSave = () => {
-    onSave(nombre, productos);
-    onClose();
-  };
-
   return (
-    <div>
-      <h2 className="text-xl font-bold mb-4 text-center">Crear Nueva Lista</h2>
-      <input
-        type="text"
-        placeholder="Nombre de la lista"
-        className="w-full border border-gray-300 p-2 rounded-lg text-black mb-4"
-        value={nombre}
-        onChange={(e) => setNombre(e.target.value)}
-      />
-      <div className="space-y-2 mb-4">
+    <div className="modal-overlay">
+      <div className="modal-content bg-white p-6 rounded-lg shadow-lg w-96">
+        <h2 className="text-xl font-bold mb-4 text-center">
+          Crear Nueva Lista
+        </h2>
+
         <input
           type="text"
-          placeholder="Agregar producto"
-          className="w-full border border-gray-300 p-2 rounded-lg text-black"
-          value={nuevoProducto}
-          onChange={(e) => setNuevoProducto(e.target.value)}
+          placeholder="Nombre de la lista"
+          className="w-full border border-gray-300 p-2 rounded-lg text-black mb-4"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
         />
+
+        {error && <p className="text-red-500 mt-2">{error}</p>}
+
         <button
-          className="bg-orange-400 text-black w-full py-2 rounded-lg hover:bg-orange-500"
-          onClick={handleAddProducto}
+          className="bg-orange-400 text-white w-full py-2 mt-4 rounded-lg hover:bg-orange-500"
+          onClick={handleSave}
+          disabled={loading}
         >
-          Agregar Producto
+          {loading ? "Guardando..." : "Guardar Lista"}
+        </button>
+        <button
+          className="bg-gray-300 text-black w-full py-2 mt-2 rounded-lg hover:bg-gray-400"
+          onClick={onClose}
+        >
+          Cancelar
         </button>
       </div>
-      <div>
-        <h4 className="font-bold mb-2">Productos en la lista:</h4>
-        <ul className="list-disc pl-4">
-          {productos.map((producto, idx) => (
-            <li key={idx}>{producto}</li>
-          ))}
-        </ul>
-      </div>
-      <button
-        className="bg-orange-400 text-black w-full py-2 mt-4 rounded-lg hover:bg-orange-500"
-        onClick={handleSave}
-      >
-        Guardar Lista
-      </button>
     </div>
   );
 };

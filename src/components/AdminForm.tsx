@@ -1,20 +1,50 @@
-import { infoUser, User } from "../assets/constants";
-import { PlusCircle, Pencil, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios"; // Importar axios
 import Navbar from "./Navbar";
 import ModalUser from "./ModalUser";
 import ModalReusable from "./ModalReusable";
+import { useAuth } from "../context/AuthContext";
+import { PlusCircle, Pencil, X } from "lucide-react";
+
+interface User {
+  id_usuario: number;
+  nombre_usuario: string;
+  email_usuario: string;
+  rol_usuario: string;
+  password: string;
+}
 
 const AdminForm = () => {
+  // Usar el contexto de autenticación
+  const { isLoggedIn, userRole } = useAuth();
+
   /* Constantes modal doble */
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"add" | "edit">("add");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(infoUser);
+  const [users, setUsers] = useState<User[]>([]); // Inicializar como arreglo vacío
 
   /* Modal de confirmación */
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+
+  // Obtener los usuarios al cargar el componente
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/api/users"); // Llamada a la API
+        if (Array.isArray(response.data)) {
+          setUsers(response.data); // Actualizar el estado solo si es un arreglo
+        } else {
+          console.error("La respuesta no es un arreglo:", response.data);
+        }
+      } catch (error) {
+        console.error("Error al obtener los usuarios:", error);
+      }
+    };
+
+    fetchUsers(); // Ejecutar la llamada cuando se monta el componente
+  }, []); // Solo se ejecuta una vez al montar el componente
 
   const handleOpenModal = (
     action: "add" | "edit",
@@ -40,14 +70,87 @@ const AdminForm = () => {
     setUserToDelete(null);
   };
 
-  const handleDeleteUser = () => {
+  const handleDeleteUser = async () => {
     if (userToDelete) {
-      setUsers(users.filter((u) => u.id !== userToDelete.id));
-      handleCloseDeleteModal();
+      try {
+        await axios.delete(
+          `http://localhost:3000/api/users/${userToDelete.id_usuario}`
+        ); // Llamada a la API para eliminar usuario
+        setUsers(users.filter((u) => u.id_usuario !== userToDelete.id_usuario)); // Eliminar del estado local
+        handleCloseDeleteModal();
+      } catch (error) {
+        console.error("Error al eliminar el usuario:", error);
+      }
     } else {
       console.error("No user selected for deletion");
     }
   };
+
+  const handleSubmitUser = async ({
+    nombre_usuario,
+    email_usuario,
+    rol_usuario,
+    password,
+  }: {
+    nombre_usuario: string;
+    email_usuario: string;
+    rol_usuario: string;
+    password: string;
+  }) => {
+    if (modalAction === "add") {
+      try {
+        const response = await axios.post("http://localhost:3000/api/users", {
+          nombre_usuario,
+          email_usuario,
+          rol_usuario,
+          password,
+        });
+        setUsers([...users, response.data]); // Agregar el usuario al estado
+        handleCloseModal();
+      } catch (error) {
+        console.error("Error al agregar el usuario:", error);
+      }
+    } else if (modalAction === "edit" && selectedUser) {
+      try {
+        const response = await axios.put(
+          `http://localhost:3000/api/users/${selectedUser.id_usuario}`,
+          {
+            nombre_usuario,
+            email_usuario,
+            rol_usuario,
+            password,
+          }
+        );
+        setUsers(
+          users.map((u) =>
+            u.id_usuario === selectedUser.id_usuario
+              ? { ...u, ...response.data }
+              : u
+          )
+        );
+        handleCloseModal();
+      } catch (error) {
+        console.error("Error al editar el usuario:", error);
+      }
+    }
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="text-center">
+        <h1>Por favor, inicie sesión para acceder a esta página.</h1>
+      </div>
+    );
+  }
+
+  // Opcionalmente, puedes hacer algo con el rol, por ejemplo:
+  if (userRole !== "administrador") {
+    return (
+      <div className="text-center">
+        <h1>No tienes permisos para acceder a esta página.</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -64,7 +167,7 @@ const AdminForm = () => {
               onClick={() => handleOpenModal("add")}
             >
               AGREGAR USUARIO
-              {<PlusCircle className="ml-2 w-5 h-5" />}
+              <PlusCircle className="ml-2 w-5 h-5" />
             </button>
           </div>
         </div>
@@ -81,41 +184,50 @@ const AdminForm = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr
-                key={user.id}
-                className="even:bg-gray-100 hover:bg-gray-200 transition"
-              >
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  {user.name}
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  {user.email}
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  {user.role}
-                </td>
-                <td className="border border-gray-300 px-4 py-2 text-center">
-                  {/* Botones de acción */}
-                  <button
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 mr-2"
-                    onClick={() => handleOpenDeleteModal(user)}
-                  >
-                    <X />
-                  </button>
-                  <button
-                    className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                    onClick={() => handleOpenModal("edit", user)}
-                  >
-                    <Pencil />
-                  </button>
+            {/* Verificar que 'users' sea un arreglo antes de llamar a 'map' */}
+            {Array.isArray(users) && users.length > 0 ? (
+              users.map((user) => (
+                <tr
+                  key={user.id_usuario}
+                  className="even:bg-gray-100 hover:bg-gray-200 transition"
+                >
+                  <td className="border border-gray-300 px-4 py-2 text-center">
+                    {user.nombre_usuario}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2 text-center">
+                    {user.email_usuario}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2 text-center">
+                    {user.rol_usuario}
+                  </td>
+                  <td className="border border-gray-300 px-4 py-2 text-center">
+                    {/* Botones de acción */}
+                    <button
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 mr-2"
+                      onClick={() => handleOpenDeleteModal(user)}
+                    >
+                      <X />
+                    </button>
+                    <button
+                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                      onClick={() => handleOpenModal("edit", user)}
+                    >
+                      <Pencil />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="text-center py-4">
+                  No se encontraron usuarios.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
-      {/*Modal añadir*/}
+      {/* Modal de añadir o editar */}
       <ModalReusable
         isOpen={isModalOpen}
         onClose={handleCloseModal}
@@ -124,24 +236,7 @@ const AdminForm = () => {
         <ModalUser
           modalAction={modalAction}
           selectedUser={selectedUser}
-          onSubmit={({ name, email, role }) => {
-            if (modalAction === "add") {
-              const newUser = {
-                id: Date.now(), // ID único temporal
-                name,
-                email,
-                role,
-              };
-              setUsers([...users, newUser]);
-            } else if (modalAction === "edit" && selectedUser) {
-              setUsers(
-                users.map((u) =>
-                  u.id === selectedUser.id ? { ...u, name, email, role } : u
-                )
-              );
-            }
-            handleCloseModal();
-          }}
+          onSubmit={handleSubmitUser}
         />
       </ModalReusable>
       {/* Modal de confirmación para eliminar */}
@@ -152,7 +247,7 @@ const AdminForm = () => {
       >
         <p className="text-center mb-6">
           ¿Estás seguro de que deseas eliminar al usuario{" "}
-          <strong>{userToDelete?.name}</strong>?
+          <strong>{userToDelete?.nombre_usuario}</strong>?
         </p>
         <div className="flex justify-center space-x-4">
           <button

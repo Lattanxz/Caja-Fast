@@ -7,10 +7,11 @@ import ProfileMenu from "./ProfileMenu";
 import HomeButton from "./HomeButton";
 
 interface NavbarProps {
-  isLoggedIn: boolean;
+  isLoggedIn?: boolean;
+  userRole?: string;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ isLoggedIn }) => {
+const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, userRole }) => {
   const [mobileMenuIsOpen, setMobileMenuIsOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -49,6 +50,27 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn }) => {
                 </a>
               </li>
             ))}
+            {/* Mostrar "Usuarios" y "Cajas" solo si el rol es "administrador" */}
+            {userRole === "administrador" && (
+              <>
+                <li className="hover:cursor-pointer">
+                  <a
+                    className="hover:opacity-75"
+                    onClick={() => handleOtherNavigation("/usuarios")}
+                  >
+                    Usuarios
+                  </a>
+                </li>
+                <li className="hover:cursor-pointer">
+                  <a
+                    className="hover:opacity-75"
+                    onClick={() => handleOtherNavigation("/cajas")}
+                  >
+                    Cajas
+                  </a>
+                </li>
+              </>
+            )}
           </ul>
           <div className="hidden lg:flex justify-center space-x-12 items-center">
             {isLoggedIn ? (
@@ -86,6 +108,27 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn }) => {
                   </a>
                 </li>
               ))}
+              {/* Mostrar "Usuarios" y "Cajas" en el menú móvil solo si el rol es "administrador" */}
+              {userRole === "administrador" && (
+                <>
+                  <li className="py-4">
+                    <a
+                      className="hover:opacity-75"
+                      onClick={() => handleOtherNavigation("/usuarios")}
+                    >
+                      Usuarios
+                    </a>
+                  </li>
+                  <li className="py-4">
+                    <a
+                      className="hover:opacity-75"
+                      onClick={() => handleOtherNavigation("/cajas")}
+                    >
+                      Cajas
+                    </a>
+                  </li>
+                </>
+              )}
             </ul>
             <div className="flex space-x-6 pt-2">
               {isLoggedIn ? (
