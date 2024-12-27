@@ -1,47 +1,84 @@
-const pool = require("../config/db");
+const { sequelize } = require("../config/db");
+const Cajas = require("../models/cajas");
+const ProductoCaja = require("../models/productoCaja");
+const Producto = require("../models/productosGeneral");
+const Venta = require("../models/venta");
+const { Op } = require("sequelize");
 
-const obtainBoxes = async (req, res) => {
+// 1. Obtener cajas para ponerla en la pagina
+// Obtener todas las cajas de un usuario por id_usuario
+const getBoxesByUserId = async (req, res) => {
+  const { id_usuario } = req.params;
+
+  console.log("ID del usuario recibido:", id_usuario); // Verifica el valor recibido
+
+  // Validar que el ID sea un número válido
+  if (isNaN(id_usuario)) {
+    return res
+      .status(400)
+      .json({ message: "El ID del usuario debe ser un número válido." });
+  }
   try {
-    const resultado = await pool.query("SELECT * FROM Cajas");
-    res.status(200).json(resultado.rows);
+    // Buscar todas las cajas donde id_usuario coincida
+    const cajas = await Cajas.findAll({
+      where: { id_usuario },
+    });
+
+    // Verificar si hay resultados
+    if (cajas.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No se encontraron cajas para este usuario" });
+    }
+
+    // Devolver las cajas encontradas
+    return res.status(200).json(cajas);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ mensaje: "Error al obtener cajas" });
+    console.error("Error al obtener las cajas:", error);
+    return res.status(500).json({ message: "Error al obtener las cajas" });
   }
 };
 
+// 2. Boton ver detalles de caja
 // Obtener todos los productos de una caja especifica
 const getProductsFromBox = async (req, res) => {
   const { id_caja } = req.params; // Obtenemos el id de la caja desde los parámetros de la ruta
 
   try {
-    const query = `
-      SELECT 
-        p.id_producto,
-        p.nombre_producto,
-        p.precio_producto,
-        pc.cantidad
-      FROM 
-        producto_caja pc
-      JOIN 
-        productos p ON pc.id_producto = p.id_producto
-      WHERE 
-        pc.id_caja = $1;
-    `;
+    // Buscamos la caja junto con los productos a través de la relación Many-to-Many
+    const caja = await Cajas.findOne({
+      where: { id_caja },
+      include: {
+        model: Producto,
+        through: { attributes: ["cantidad"] }, // Incluir la cantidad de la tabla intermedia
+      },
+    });
 
-    const result = await pool.query(query, [id_caja]);
+    // Si no se encuentra la caja, devolvemos un error 404
+    if (!caja) {
+      return res.status(404).json({
+        message: "Caja no encontrada.",
+      });
+    }
 
-    // Si no se encuentran productos en la caja, devolvemos un mensaje adecuado
-    if (result.rows.length === 0) {
+    // Si la caja no tiene productos, devolvemos un mensaje adecuado
+    if (caja.Productos.length === 0) {
       return res.status(404).json({
         message: "No se encontraron productos para esta caja.",
       });
     }
 
-    // Devolvemos los productos encontrados en la caja junto con la cantidad
+    // Devolvemos los productos de la caja con la cantidad
+    const productos = caja.Productos.map((producto) => ({
+      id_producto: producto.id_producto,
+      nombre_producto: producto.nombre_producto,
+      precio_producto: producto.precio_producto,
+      cantidad: producto.ProductoCaja.cantidad, // Accedemos a la cantidad a través de la tabla intermedia
+    }));
+
     res.status(200).json({
       message: "Productos obtenidos exitosamente",
-      productos: result.rows,
+      productos,
     });
   } catch (error) {
     console.error("Error al obtener los productos de la caja:", error);
@@ -51,6 +88,7 @@ const getProductsFromBox = async (req, res) => {
   }
 };
 
+// 3. Boton gestionar
 // actualizar box
 const updateBox = async (req, res) => {
   console.log("Datos recibidos:", req.body); // Verifica que los datos están llegando correctamente
@@ -114,93 +152,183 @@ const updateBox = async (req, res) => {
   }
 };
 
-// Obtener todas las cajas de un usuario por id_usuario
-const getBoxesByUserId = async (req, res) => {
-  const { id_usuario } = req.params;
-  console.log("ID del usuario recibido:", id_usuario); // Verifica que sea un número y no null o undefined
+// 4. Boton eliminar caja
+// Eliminar caja por id
+const deleteBoxFromId = async (req, res) => {
+  const { id } = req.params;
 
-  if (isNaN(id_usuario)) {
-    return res
-      .status(400)
-      .json({ message: "El ID del usuario debe ser un número válido." });
+  if (!id || isNaN(id)) {
+    return res.status(400).json({ mensaje: "ID inválido" }); // Cambio a 'mensaje' para consistencia
   }
 
-  try {
-    const result = await pool.query(
-      "SELECT * FROM cajas WHERE id_usuario = $1",
-      [id_usuario]
-    );
+  const t = await sequelize.transaction(); // Inicia la transacción
 
-    if (result.rows.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No se encontraron cajas para este usuario" });
+  try {
+    // Eliminar las relaciones en la tabla ProductoCaja
+    await ProductoCaja.destroy({
+      where: { id_caja: id },
+      transaction: t, // Asocia la transacción a la operación
+    });
+
+    // Eliminar las relaciones en la tabla Venta
+    await Venta.destroy({
+      where: { id_caja: id },
+      transaction: t, // Asocia la transacción a la operación
+    });
+
+    // Eliminar la caja
+    const caja = await Cajas.findByPk(id);
+    if (!caja) {
+      return res.status(404).json({ mensaje: "Caja no encontrada" });
     }
 
-    return res.status(200).json(result.rows);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error al obtener las cajas" });
+    await caja.destroy({ transaction: t }); // Eliminar la caja de la tabla Cajas
+
+    // Confirmar los cambios en la transacción
+    await t.commit();
+
+    res.status(200).json({ mensaje: "Caja eliminada correctamente" });
+  } catch (err) {
+    // Si ocurre un error, revertir la transacción
+    await t.rollback();
+    console.error(err);
+    res.status(500).json({ mensaje: "Error al eliminar la caja" });
   }
 };
 
-// Controlador para crear una caja con productos
-const createBoxWithProducts = async (req, res) => {
-  const { nombreCaja, productosSeleccionados } = req.body; // Asumiendo que recibimos el nombre de la caja y los productos seleccionados
-  console.log(nombreCaja, productosSeleccionados);
-  // Validar que se recibieron los datos necesarios
-  if (
-    !nombreCaja ||
-    !productosSeleccionados ||
-    productosSeleccionados.length === 0
-  ) {
-    return res
-      .status(400)
-      .json({ mensaje: "Faltan datos necesarios para crear la caja" });
-  }
-
-  const client = await pool.connect(); // Obtener un cliente de la base de datos para manejar transacciones
+// 5. Agregar producto a la caja
+// Función para agregar un producto a una caja
+const addProductToBox = async (req, res) => {
+  const { id_caja } = req.params; // Obtener el id de la caja de los parámetros de la URL
+  const { id_producto, cantidad } = req.body; // Obtener el id del producto y la cantidad de la solicitud
 
   try {
-    await client.query("BEGIN"); // Comenzar una transacción
+    // Buscar la caja por su id
+    const caja = await Cajas.findByPk(id_caja);
+    if (!caja) {
+      return res.status(404).json({ message: "Caja no encontrada." });
+    }
 
-    // Paso 1: Insertar la nueva caja (sin productos por ahora)
-    const resultCaja = await client.query(
-      "INSERT INTO cajas (nombre_caja) VALUES ($1) RETURNING id_caja",
-      [nombreCaja]
-    );
-    const idCaja = resultCaja.rows[0].id_caja; // Obtener el ID de la nueva caja
+    // Buscar el producto por su id
+    const producto = await Producto.findByPk(id_producto);
+    if (!producto) {
+      return res.status(404).json({ message: "Producto no encontrado." });
+    }
 
-    // Paso 2: Insertar los productos en la tabla intermedia productos_caja
-    const insertProductoCajaPromises = productosSeleccionados.map(
-      (productoId) => {
-        return client.query(
-          "INSERT INTO productos_caja (id_caja, id_producto) VALUES ($1, $2)",
-          [idCaja, productoId]
-        );
-      }
-    );
+    // Verificar si el producto ya está en la caja
+    const productoExistente = await ProductoCaja.findOne({
+      where: {
+        id_caja: id_caja,
+        id_producto: id_producto,
+      },
+    });
 
-    // Ejecutar todas las inserciones de productos
-    await Promise.all(insertProductoCajaPromises);
+    if (productoExistente) {
+      // Si ya existe, actualizar la cantidad
+      productoExistente.cantidad += cantidad; // Sumar la cantidad
+      await productoExistente.save();
+      return res
+        .status(200)
+        .json({ message: "Cantidad del producto actualizada." });
+    }
 
-    await client.query("COMMIT"); // Confirmar la transacción
-    res
+    // Si no existe, agregar el producto con la cantidad indicada
+    await caja.addProducto(producto, { through: { cantidad } });
+
+    return res
       .status(200)
-      .json({ mensaje: "Caja creada con productos correctamente" });
-  } catch (err) {
-    await client.query("ROLLBACK"); // Si algo falla, revertir todo
-    console.error("Error al crear la caja con productos:", err);
-    res.status(500).json({ mensaje: "Error al crear la caja con productos" });
-  } finally {
-    client.release(); // Liberar el cliente de la base de datos
+      .json({ message: "Producto agregado a la caja correctamente." });
+  } catch (error) {
+    console.error("Error al agregar el producto a la caja:", error);
+    return res
+      .status(500)
+      .json({ message: "Hubo un error al agregar el producto a la caja." });
+  }
+};
+
+// 6. Borrar producto de una caja
+const deleteProductFromBox = async (req, res) => {
+  const { id_caja, id_producto } = req.params; // Recibimos los parámetros desde la URL
+  const { cantidad } = req.query; // Recibimos la cantidad desde los parámetros de consulta
+  const cantidadEliminar = Number(cantidad) || 1; // Si no se envía, se elimina 1 por defecto
+
+  console.log(
+    `ID Caja: ${id_caja}, ID Producto: ${id_producto}, Cantidad: ${cantidadEliminar}`
+  );
+
+  try {
+    // Asegúrate de que tanto id_caja como id_producto sean números válidos
+    if (isNaN(id_caja) || isNaN(id_producto)) {
+      return res
+        .status(400)
+        .json({ message: "ID de caja o producto inválido." });
+    }
+
+    // Buscar el producto en la caja
+    const productoEnCaja = await ProductoCaja.findOne({
+      where: { id_caja: id_caja, id_producto: id_producto },
+    });
+
+    if (!productoEnCaja) {
+      return res
+        .status(404)
+        .json({ message: "Producto no encontrado en la caja." });
+    }
+
+    // Restar la cantidad y verificar si se debe eliminar el registro
+    if (productoEnCaja.cantidad > cantidadEliminar) {
+      productoEnCaja.cantidad -= cantidadEliminar;
+      await productoEnCaja.save();
+    } else {
+      await productoEnCaja.destroy();
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Producto actualizado correctamente." });
+  } catch (error) {
+    console.error("Error al eliminar producto parcialmente:", error);
+    return res.status(500).json({ message: "Error interno del servidor." });
+  }
+};
+
+// 7. Crear Caja
+const createBox = async (req, res) => {
+  const { nombre_caja, fecha_creacion, estado = true } = req.body; // Valor predeterminado
+
+  // Validar que los campos estén completos
+  if (!nombre_caja || !fecha_creacion) {
+    return res.status(400).json({ message: "Faltan campos obligatorios" });
+  }
+
+  try {
+    // Obtener el id_usuario del usuario autenticado
+    const { id_usuario } = req.user; // Este valor fue agregado por el middleware
+    console.log("ID del usuario autenticado:", id_usuario);
+
+    // Crear la caja en la base de datos
+    const nuevaCaja = await Cajas.create({
+      nombre_caja,
+      fecha_creacion,
+      estado, // Si no se pasa, será `true` por defecto
+      id_usuario, // Asociar la caja al usuario autenticado
+    });
+
+    res
+      .status(201)
+      .json({ message: "Caja creada exitosamente", caja: nuevaCaja });
+  } catch (error) {
+    console.error("Error al crear la caja:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
   }
 };
 
 module.exports = {
-  obtainBoxes,
   getProductsFromBox,
   updateBox,
   getBoxesByUserId,
-  createBoxWithProducts,
+  deleteBoxFromId,
+  addProductToBox,
+  deleteProductFromBox,
+  createBox,
 };

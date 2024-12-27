@@ -6,7 +6,7 @@ exports.authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: "Token no proporcionado" });
   }
 
-  jwt.verify(token, "secreto", (err, user) => {
+  jwt.verify(token, "tu_secreto", (err, user) => {
     if (err) {
       return res.status(403).json({ error: "Token no válido" });
     }

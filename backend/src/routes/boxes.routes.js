@@ -1,192 +1,15 @@
 const express = require("express");
-const pool = require("../config/db");
 const router = express.Router();
-const Joi = require("joi");
+const { authenticateToken } = require("../middleware/auth.middleware");
 const {
   getProductsFromBox,
   updateBox,
   getBoxesByUserId,
-  createBoxWithProducts,
+  deleteBoxFromId,
+  addProductToBox,
+  deleteProductFromBox,
+  createBox,
 } = require("../controllers/boxes.controller");
-
-const cajaSchema = Joi.object({
-  ID_Usuario: Joi.number().integer().required(), // Validar que sea un número entero y requerido
-  Nombre_Caja: Joi.string().min(3).max(255).required(), // Nombre debe ser una cadena entre 3 y 255 caracteres
-  Descripcion_Caja: Joi.string().min(3).max(500).optional(), // Descripción opcional
-  Fecha_Apertura: Joi.date().iso().required(), // Validar que sea una fecha en formato ISO
-  Fecha_Cierre: Joi.date().iso().optional(), // Validar que sea una fecha en formato ISO
-  estado: Joi.boolean().required(), // Validar que sea un booleano
-});
-
-/**
- * @swagger
- * /api/boxes:
- *   post:
- *     summary: Crear una nueva caja
- *     description: Este endpoint crea una nueva caja en el sistema.
- *     tags:
- *          - Cajas
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               ID_Usuario:
- *                 type: integer
- *               Nombre_Caja:
- *                 type: string
- *               Descripcion_Caja:
- *                 type: string
- *               Fecha_Apertura:
- *                 type: string
- *                 format: date-time
- *               Fecha_Cierre:
- *                 type: string
- *                 format: date-time
- *               estado:
- *                 type: boolean
- *     responses:
- *       201:
- *         description: Caja creada correctamente
- *       400:
- *         description: Solicitud incorrecta
- *       500:
- *         description: Error interno del servidor
- */
-
-router.post("/", async (req, res) => {
-  const { error } = cajaSchema.validate(req.body);
-
-  if (error) {
-    return res
-      .status(400)
-      .json({ mensaje: "Datos incorrectos", detalles: error.details });
-  }
-
-  const {
-    ID_Usuario,
-    Nombre_Caja,
-    Descripcion_Caja,
-    Fecha_Apertura,
-    Fecha_Cierre,
-    estado,
-  } = req.body;
-
-  const query = `
-    INSERT INTO Cajas (ID_Usuario, Nombre_Caja, Descripcion_Caja, Fecha_Apertura, Fecha_Cierre, estado)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING *;
-  `;
-
-  try {
-    const result = await pool.query(query, [
-      ID_Usuario,
-      Nombre_Caja,
-      Descripcion_Caja,
-      Fecha_Apertura,
-      Fecha_Cierre,
-      estado,
-    ]);
-    res.status(201).json(result.rows[0]); // Devuelve la caja creada
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ mensaje: "Error al crear la caja" });
-  }
-});
-
-/**
- * @swagger
- * /api/boxes:
- *   get:
- *     summary: Obtener todas las cajas
- *     description: Este endpoint obtiene todas las cajas del sistema.
- *     tags:
- *          - Cajas
- *     responses:
- *       200:
- *         description: Lista de cajas
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   ID_Caja:
- *                     type: integer
- *                   Nombre_Caja:
- *                     type: string
- *                   Descripcion_Caja:
- *                     type: string
- *                   Fecha_Apertura:
- *                     type: string
- *                     format: date-time
- *                   Fecha_Cierre:
- *                     type: string
- *                     format: date-time
- *                   estado:
- *                     type: boolean
- *       500:
- *         description: Error interno del servidor
- */
-
-// GET
-// 2. Obtener todas las cajas
-router.get("/", async (req, res) => {
-  const query = "SELECT * FROM Cajas;";
-
-  try {
-    const result = await pool.query(query);
-    res.status(200).json(result.rows); // Devuelve todas las cajas
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ mensaje: "Error al obtener las cajas" });
-  }
-});
-
-/**
- * @swagger
- * /api/boxes/{id}:
- *   get:
- *     summary: Obtener una caja específica
- *     description: Este endpoint obtiene una caja específica por su ID.
- *     tags:
- *          - Cajas
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: ID de la caja
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Caja encontrada
- *       404:
- *         description: Caja no encontrada
- *       500:
- *         description: Error interno del servidor
- */
-
-// GET
-router.get("/:id", async (req, res) => {
-  const { id } = req.params;
-
-  const query = "SELECT * FROM Cajas WHERE ID_Caja = $1;";
-
-  try {
-    const result = await pool.query(query, [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ mensaje: "Caja no encontrada" });
-    }
-    res.status(200).json(result.rows[0]); // Devuelve la caja encontrada
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ mensaje: "Error al obtener la caja" });
-  }
-});
 
 /**
  * @swagger
@@ -266,42 +89,49 @@ router.put("/:id", updateBox);
  */
 
 // DELETE
-router.delete("/:id", async (req, res) => {
-  const { id } = req.params;
-  if (!id || isNaN(id)) {
-    return res.status(400).json({ error: "ID inválido" });
-  }
-
-  const query = "DELETE FROM Cajas WHERE ID_Caja = $1 RETURNING *;";
-
-  try {
-    const result = await pool.query(query, [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ mensaje: "Caja no encontrada" });
-    }
-    res.status(200).json({ mensaje: "Caja eliminada correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ mensaje: "Error al eliminar la caja" });
-  }
-});
+router.delete("/:id", deleteBoxFromId);
 
 /**
  * @swagger
  * /api/boxes/{id_caja}/products:
  *   get:
- *     summary: Obtiene todos los productos dentro de una caja específica con sus cantidades.
- *     tags: [Cajas]
+ *     summary: Obtener productos de una caja
+ *     description: Obtiene todos los productos asociados a una caja específica, mostrando nombre, precio y cantidad.
+ *     tags:
+ *       - Cajas
  *     parameters:
  *       - in: path
  *         name: id_caja
  *         required: true
- *         description: ID de la caja para obtener los productos.
+ *         description: ID de la caja de la cual se desean obtener los productos.
  *         schema:
  *           type: integer
+ *           example: 1
  *     responses:
  *       200:
  *         description: Productos obtenidos exitosamente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id_producto:
+ *                     type: integer
+ *                     example: 1
+ *                   nombre_producto:
+ *                     type: string
+ *                     example: "Producto 1"
+ *                   precio_producto:
+ *                     type: number
+ *                     format: float
+ *                     example: 150.00
+ *                   cantidad:
+ *                     type: integer
+ *                     example: 3
+ *       404:
+ *         description: La caja no tiene productos o no existe.
  *         content:
  *           application/json:
  *             schema:
@@ -309,22 +139,17 @@ router.delete("/:id", async (req, res) => {
  *               properties:
  *                 message:
  *                   type: string
- *                 productos:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id_producto:
- *                         type: integer
- *                       nombre_producto:
- *                         type: string
- *                       precio_producto:
- *                         type: number
- *                         format: float
- *       404:
- *         description: No se encontraron productos para esta caja.
+ *                   example: "No se encontraron productos para esta caja."
  *       500:
  *         description: Error al obtener los productos de la caja.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error al obtener los productos de la caja"
  */
 
 router.get("/:id_caja/products", getProductsFromBox);
@@ -373,52 +198,174 @@ router.get("/users/:id_usuario", getBoxesByUserId);
 
 /**
  * @swagger
- * /api/boxes/createBoxWithProducts:
+ * /api/boxes/{id_caja}/products:
  *   post:
- *     summary: Crear una nueva caja con productos
- *     description: Crea una caja con los productos seleccionados.
- *     tags:
- *       - Cajas
+ *     summary: Agregar un producto a la caja
+ *     description: Agrega un producto a la caja seleccionada, actualizando la cantidad si ya existe.
+ *     tags: [Cajas]
+ *     parameters:
+ *       - in: path
+ *         name: id_caja
+ *         required: true
+ *         description: El ID de la caja a la que se va a agregar el producto.
+ *         schema:
+ *           type: integer
  *     requestBody:
- *       description: Los productos que se agregarán a la caja.
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
  *             properties:
- *               nombreCaja:
- *                 type: string
- *                 description: El nombre de la caja.
- *               productos:
- *                 type: array
- *                 items:
- *                   type: string
- *                   description: El nombre de cada producto.
- *             required:
- *               - nombreCaja
- *               - productos
+ *               id_producto:
+ *                 type: integer
+ *                 description: El ID del producto que se va a agregar a la caja.
+ *                 example: 1
+ *               cantidad:
+ *                 type: integer
+ *                 description: La cantidad de producto que se agregará a la caja.
+ *                 example: 5
  *     responses:
  *       200:
- *         description: Caja creada con éxito con los productos.
+ *         description: El producto se ha agregado correctamente a la caja o se ha actualizado la cantidad si ya existía.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 idCaja:
+ *                 message:
  *                   type: string
- *                   description: El ID de la nueva caja creada.
- *                 productos:
- *                   type: array
- *                   items:
- *                     type: string
- *                   description: Lista de productos añadidos a la caja.
- *       400:
- *         description: Error de validación o datos incompletos.
+ *                   example: Producto agregado a la caja correctamente.
+ *       404:
+ *         description: Caja o producto no encontrados.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Caja no encontrada.
  *       500:
  *         description: Error interno del servidor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Hubo un error al agregar el producto a la caja.
  */
-router.post("/createBoxWithProducts", createBoxWithProducts);
+router.post("/:id_caja/products", addProductToBox);
+
+/**
+ * @swagger
+ * /api/boxes/{id_caja}/products/{id_producto}:
+ *   delete:
+ *     summary: Eliminar un producto de la caja
+ *     description: Elimina un producto de la caja seleccionada, parcialmente basado en la cantidad proporcionada.
+ *     tags: [Cajas]
+ *     parameters:
+ *       - in: path
+ *         name: id_caja
+ *         required: true
+ *         description: El ID de la caja de la que se va a eliminar el producto.
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: id_producto
+ *         required: true
+ *         description: El ID del producto que se va a eliminar de la caja.
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: cantidad
+ *         required: false
+ *         description: La cantidad de producto que se desea eliminar (por defecto 1).
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *     responses:
+ *       200:
+ *         description: Producto eliminado correctamente de la caja.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Producto eliminado de la caja correctamente.
+ *       404:
+ *         description: Caja o producto no encontrados.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Caja o producto no encontrados.
+ *       500:
+ *         description: Error interno del servidor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Hubo un error al eliminar el producto de la caja.
+ */
+router.delete("/:id_caja/products/:id_producto", deleteProductFromBox);
+
+/**
+ * @swagger
+ * /api/boxes/create:
+ *   post:
+ *     summary: Crea una nueva caja
+ *     description: Crea una nueva caja asociada al usuario autenticado
+ *     operationId: createBox
+ *     tags:
+ *       - Cajas
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre_caja:
+ *                 type: string
+ *               fecha_creacion:
+ *                 type: string
+ *                 format: date
+ *               estado:
+ *                 type: boolean
+ *                 description: Estado de la caja (abierta/cerrada)
+ *                 default: true  # Valor predeterminado
+ *             required:
+ *               - nombre_caja
+ *               - fecha_creacion
+ *     responses:
+ *       201:
+ *         description: Caja creada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Caja creada exitosamente"
+ *                 caja:
+ *                   $ref: '#/components/schemas/Caja'
+ *       400:
+ *         description: Faltan campos obligatorios
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.post("/create", authenticateToken, createBox);
 
 module.exports = router;

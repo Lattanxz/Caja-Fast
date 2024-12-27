@@ -5,6 +5,7 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  addProductToBox,
 } = require("../controllers/products.controller");
 
 const router = express.Router();
@@ -137,5 +138,81 @@ router.put("/:id", updateProduct);
  *         description: Producto no encontrado
  */
 router.delete("/:id", deleteProduct);
+
+/**
+ * @swagger
+ * /api/products/box:
+ *   post:
+ *     summary: Agrega un producto a una caja
+ *     description: Permite agregar un producto a una caja especificando el ID del producto, el ID de la caja y la cantidad.
+ *     tags:
+ *       - Productos
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id_producto
+ *               - id_caja
+ *               - cantidad
+ *             properties:
+ *               id_producto:
+ *                 type: integer
+ *                 description: ID del producto que se desea agregar.
+ *                 example: 1
+ *               id_caja:
+ *                 type: integer
+ *                 description: ID de la caja donde se agregará el producto.
+ *                 example: 2
+ *               cantidad:
+ *                 type: integer
+ *                 description: Cantidad del producto a agregar.
+ *                 example: 5
+ *     responses:
+ *       201:
+ *         description: Producto agregado a la caja con éxito.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: Producto agregado a la caja con éxito
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id_producto:
+ *                       type: integer
+ *                       example: 1
+ *                     id_caja:
+ *                       type: integer
+ *                       example: 2
+ *                     cantidad:
+ *                       type: integer
+ *                       example: 5
+ *       400:
+ *         description: Datos faltantes o inválidos.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *       500:
+ *         description: Error interno del servidor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: Error al agregar el producto a la caja
+ */
+router.post("/box", addProductToBox);
 
 module.exports = router;

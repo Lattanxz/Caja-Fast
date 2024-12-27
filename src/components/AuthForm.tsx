@@ -4,6 +4,8 @@ import HomeButton from "./HomeButton";
 import ResetPassword from "./ResetPassword";
 import authImage from "../assets/imgs/camarera-con-caja-registradora.jpeg";
 import logo from "../assets/imgs/logo_transparent cut.png";
+import { ToastContainer, toast } from "react-toastify"; // Importa el ToastContainer y toast
+import "react-toastify/dist/ReactToastify.css"; // Importa los estilos de Toastify
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -22,37 +24,72 @@ const AuthForm = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Prevenir el comportamiento predeterminado del formulario
+    e.preventDefault();
 
-    const email_usuario = (e.target as HTMLFormElement).email_usuario.value;
-    const password = (e.target as HTMLFormElement).password.value;
+    // Accede a los valores de los inputs de forma correcta
+    const form = e.target as HTMLFormElement;
+
+    const nombre_usuario = !isLogin
+      ? (form.elements.namedItem("name") as HTMLInputElement).value
+      : ""; // Solo en registro
+    const email_usuario = (
+      form.elements.namedItem("email_usuario") as HTMLInputElement
+    ).value;
+    const password = (form.elements.namedItem("password") as HTMLInputElement)
+      .value;
 
     try {
-      const response = await fetch("http://localhost:3000/api/auth/login", {
+      const endpoint = isLogin
+        ? "http://localhost:3000/api/auth/login"
+        : "http://localhost:3000/api/auth/register";
+
+      const body = isLogin
+        ? { email_usuario, password }
+        : { nombre_usuario, email_usuario, password };
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email_usuario, password }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
       console.log(data);
+
       if (response.ok) {
-        console.log("Login exitoso:", data);
+        if (isLogin) {
+          console.log("Login exitoso:", data);
 
-        // Guardar el token en localStorage
-        localStorage.setItem("token", data.token);
+          // Guardar el token en localStorage
+          localStorage.setItem("token", data.token);
 
-        // Actualizar el estado de autenticación en el contexto
-        setIsLoggedIn(true);
-        setUserRole(data.role); // Guardar el rol del usuario en el contexto
+          // Actualizar el estado de autenticación en el contexto
+          setIsLoggedIn(true);
+          setUserRole(data.role);
 
-        // Redirigir según el rol
-        window.location.href = data.redirect;
+          // Redirigir según el rol
+          window.location.href = data.redirect;
+        } else {
+          // Registro exitoso
+          toast.success(
+            "¡Usuario registrado exitosamente! Ahora puedes iniciar sesión.",
+            {
+              position: "top-right",
+              autoClose: 3000,
+              hideProgressBar: true,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+            }
+          );
+          toggleAuthForm(); // Cambiar al formulario de login
+        }
       } else {
-        console.error("Error al iniciar sesión:", data.mensaje);
-        alert(data.mensaje); // Mostrar mensaje de error al usuario
+        console.error("Error:", data.mensaje);
+        alert(data.mensaje); // Mostrar mensaje de error
       }
     } catch (err) {
       console.error("Error al conectar con el servidor:", err);
@@ -134,14 +171,14 @@ const AuthForm = () => {
                     className="w-full px-3 py-2 border rounded-lg"
                   />
                 </div>
-                <div className="mb-4 flex items-center flex-shrink-0">
-                  <label className="inline-flex items-center flex-wrap">
+                <div className="mb-6 flex items-center justify-between">
+                  <label className="inline-flex items-center">
                     <input
                       type="checkbox"
                       className="form-checkbox cursor-pointer"
                     />
                     <span className="ml-2 text-sm text-gray-500 hover:text-black cursor-pointer">
-                      Recuérdame{" "}
+                      Recuérdame
                     </span>
                   </label>
                   <p
@@ -187,6 +224,7 @@ const AuthForm = () => {
           )}
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };

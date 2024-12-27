@@ -1,19 +1,17 @@
 const pool = require("../config/db");
-
+const ProductoCaja = require("../models/productoCaja");
+const Producto = require("../models/productosGeneral");
 // Obtener todos los productos
 const getAllProducts = async (req, res) => {
-  const query = "SELECT nombre_producto FROM productos;"; // Seleccionamos solo los nombres de los productos
   try {
-    const result = await pool.query(query);
+    const productos = await Producto.findAll({
+      attributes: ["id_producto", "nombre_producto"], // Devuelve id y nombre
+    });
 
-    // Extraemos solo los nombres de los productos
-    const productos = result.rows.map((row) => row.nombre_producto);
-
-    // Enviamos el arreglo de nombres de productos como respuesta JSON
     res.status(200).json(productos);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ mensaje: "Error al obtener los productos" });
+  } catch (error) {
+    console.error("Error al obtener productos:", error);
+    res.status(500).json({ mensaje: "Error al obtener productos" });
   }
 };
 
@@ -151,10 +149,42 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+const addProductToBox = async (req, res) => {
+  const { id_producto, id_caja, cantidad } = req.body;
+
+  try {
+    // Validar que los campos requeridos estén presentes
+    if (!id_producto || !id_caja || !cantidad) {
+      return res.status(400).json({
+        mensaje: "Faltan datos: id_producto, id_caja y cantidad son requeridos",
+      });
+    }
+
+    // Crear un registro en la tabla producto_caja
+    const productoCaja = await ProductoCaja.create({
+      id_producto,
+      id_caja,
+      cantidad,
+    });
+
+    // Devolver el registro creado
+    res.status(201).json({
+      mensaje: "Producto agregado a la caja con éxito",
+      data: productoCaja,
+    });
+  } catch (err) {
+    console.error("Error al agregar el producto a la caja:", err);
+    res.status(500).json({
+      mensaje: "Error al agregar el producto a la caja",
+    });
+  }
+};
+
 module.exports = {
   getAllProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  addProductToBox,
 };

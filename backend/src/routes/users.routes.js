@@ -1,12 +1,16 @@
 const express = require("express");
-const pool = require("../config/db");
 const router = express.Router();
-const bcrypt = require("bcryptjs");
-const saltRounds = 10;
+const {
+  createUser,
+  getAllUsers,
+  getUserById,
+  updateUserById,
+  deleteUserById,
+} = require("../controllers/users.controller");
 
 /**
  * @swagger
- * /api/users:
+ * /api/users/create:
  *   post:
  *     summary: Crear un nuevo usuario
  *     description: Este endpoint crea un nuevo usuario en el sistema.
@@ -35,40 +39,7 @@ const saltRounds = 10;
  *       500:
  *         description: Error interno del servidor
  */
-router.post("/", async (req, res) => {
-  const { nombre_usuario, email_usuario, password, rol_usuario } = req.body;
-
-  // Validación básica
-  if (!nombre_usuario || !email_usuario || !password || !rol_usuario) {
-    return res
-      .status(400)
-      .json({ mensaje: "Todos los campos son obligatorios" });
-  }
-
-  try {
-    // Encriptar la contraseña
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    // Query para insertar el usuario en la base de datos
-    const query = `
-      INSERT INTO usuarios (nombre_usuario, email_usuario, password, rol_usuario)
-      VALUES ($1, $2, $3, $4)
-      RETURNING *;
-    `;
-
-    const result = await pool.query(query, [
-      nombre_usuario,
-      email_usuario,
-      hashedPassword,
-      rol_usuario,
-    ]);
-
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error("Error al crear el usuario:", err);
-    res.status(500).json({ mensaje: "Error interno del servidor" });
-  }
-});
+router.post("/create", createUser);
 
 /**
  * @swagger
@@ -84,17 +55,7 @@ router.post("/", async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.get("/", async (req, res) => {
-  const query = "SELECT * FROM Usuarios;";
-
-  try {
-    const result = await pool.query(query);
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ mensaje: "Error al obtener los usuarios" });
-  }
-});
+router.get("/", getAllUsers);
 
 /**
  * @swagger
@@ -119,21 +80,7 @@ router.get("/", async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.get("/:id", async (req, res) => {
-  const { id } = req.params;
-
-  const query = "SELECT * FROM Usuarios WHERE ID_Usuario = $1;";
-  try {
-    const result = await pool.query(query, [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ mensaje: "Usuario no encontrado" });
-    }
-    res.status(200).json(result.rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ mensaje: "Error al obtener el usuario" });
-  }
-});
+router.get("/:id", getUserById);
 
 /**
  * @swagger
@@ -173,45 +120,7 @@ router.get("/:id", async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.put("/:id", async (req, res) => {
-  const { id } = req.params;
-  const { nombre_usuario, email_usuario, password, rol_usuario } = req.body;
-
-  try {
-    let hashedPassword = null;
-
-    // Encriptar la contraseña solo si se proporciona una nueva
-    if (password) {
-      hashedPassword = await bcrypt.hash(password, saltRounds);
-    }
-
-    const query = `
-      UPDATE usuarios
-      SET nombre_usuario = $1, email_usuario = $2, 
-          password = COALESCE($3, password), 
-          rol_usuario = $4
-      WHERE id_usuario = $5
-      RETURNING *;
-    `;
-
-    const result = await pool.query(query, [
-      nombre_usuario,
-      email_usuario,
-      hashedPassword,
-      rol_usuario,
-      id,
-    ]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ mensaje: "Usuario no encontrado" });
-    }
-
-    res.status(200).json(result.rows[0]);
-  } catch (err) {
-    console.error("Error al actualizar el usuario:", err);
-    res.status(500).json({ mensaje: "Error al actualizar el usuario" });
-  }
-});
+router.put("/:id", updateUserById);
 
 /**
  * @swagger
@@ -236,60 +145,6 @@ router.put("/:id", async (req, res) => {
  *       500:
  *         description: Error interno del servidor
  */
-router.delete("/:id", async (req, res) => {
-  const { id } = req.params;
-
-  const client = await pool.connect(); // Usamos client para manejar transacciones
-
-  try {
-    await client.query("BEGIN"); // Iniciar transacción
-
-    // Eliminar las relaciones en productos_listas asociadas a este usuario
-    const deleteProductosListasQuery = `
-      DELETE FROM productos_listas
-      WHERE id_lista IN (
-        SELECT id_lista FROM listas WHERE id_usuario = $1
-      );
-    `;
-    await client.query(deleteProductosListasQuery, [id]);
-
-    // Eliminar las listas asociadas al usuario
-    const deleteListasQuery = `
-      DELETE FROM listas
-      WHERE id_usuario = $1;
-    `;
-    await client.query(deleteListasQuery, [id]);
-
-    // Eliminar las cajas asociadas al usuario
-    const deleteCajasQuery = `
-      DELETE FROM cajas
-      WHERE id_usuario = $1;
-    `;
-    await client.query(deleteCajasQuery, [id]);
-
-    // Eliminar el usuario
-    const deleteUsuarioQuery = `
-      DELETE FROM usuarios WHERE id_usuario = $1 RETURNING *;
-    `;
-    const result = await client.query(deleteUsuarioQuery, [id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ mensaje: "Usuario no encontrado" });
-    }
-
-    await client.query("COMMIT"); // Confirmar transacción
-    res.status(200).json({
-      mensaje: "Usuario y sus datos asociados eliminados correctamente",
-    });
-  } catch (err) {
-    await client.query("ROLLBACK"); // Revertir si hay error
-    console.error(err);
-    res
-      .status(500)
-      .json({ mensaje: "Error al eliminar el usuario y sus datos" });
-  } finally {
-    client.release(); // Liberar el cliente de la conexión
-  }
-});
+router.delete("/:id", deleteUserById);
 
 module.exports = router;

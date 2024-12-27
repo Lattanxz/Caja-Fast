@@ -5,6 +5,8 @@ const swaggerSpec = require("./swaggerConfig");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
+require("./models/associations"); // Asegura que todas las relaciones estén definidas
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -18,6 +20,7 @@ app.use(
 
 app.use(express.json()); // Middleware global para el cuerpo de la solicitud
 app.use(cookieParser());
+
 // Ruta base para probar el servidor
 app.get("/", (req, res) => {
   res.send("¡Servidor funcionando!");

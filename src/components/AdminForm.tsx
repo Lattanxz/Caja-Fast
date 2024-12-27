@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import axios from "axios"; // Importar axios
+import axios from "axios";
 import Navbar from "./Navbar";
 import ModalUser from "./ModalUser";
 import ModalReusable from "./ModalReusable";
 import { useAuth } from "../context/AuthContext";
 import { PlusCircle, Pencil, X } from "lucide-react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface User {
   id_usuario: number;
@@ -15,26 +17,23 @@ interface User {
 }
 
 const AdminForm = () => {
-  // Usar el contexto de autenticación
   const { isLoggedIn, userRole } = useAuth();
 
-  /* Constantes modal doble */
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"add" | "edit">("add");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]); // Inicializar como arreglo vacío
-
-  /* Modal de confirmación */
+  const [users, setUsers] = useState<User[]>([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
-  // Obtener los usuarios al cargar el componente
+  // Cargar usuarios al montar el componente
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/users"); // Llamada a la API
+        const response = await axios.get("http://localhost:3000/api/users");
         if (Array.isArray(response.data)) {
-          setUsers(response.data); // Actualizar el estado solo si es un arreglo
+          setUsers(response.data);
+          console.log(response.data);
         } else {
           console.error("La respuesta no es un arreglo:", response.data);
         }
@@ -43,8 +42,8 @@ const AdminForm = () => {
       }
     };
 
-    fetchUsers(); // Ejecutar la llamada cuando se monta el componente
-  }, []); // Solo se ejecuta una vez al montar el componente
+    fetchUsers();
+  }, []);
 
   const handleOpenModal = (
     action: "add" | "edit",
@@ -75,23 +74,25 @@ const AdminForm = () => {
       try {
         await axios.delete(
           `http://localhost:3000/api/users/${userToDelete.id_usuario}`
-        ); // Llamada a la API para eliminar usuario
-        setUsers(users.filter((u) => u.id_usuario !== userToDelete.id_usuario)); // Eliminar del estado local
+        );
+        setUsers(users.filter((u) => u.id_usuario !== userToDelete.id_usuario));
+        toast.error("¡Usuario eliminado correctamente!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
         handleCloseDeleteModal();
       } catch (error) {
         console.error("Error al eliminar el usuario:", error);
       }
-    } else {
-      console.error("No user selected for deletion");
     }
   };
 
-  const handleSubmitUser = async ({
-    nombre_usuario,
-    email_usuario,
-    rol_usuario,
-    password,
-  }: {
+  const handleSubmitUser = async (data: {
     nombre_usuario: string;
     email_usuario: string;
     rol_usuario: string;
@@ -99,13 +100,20 @@ const AdminForm = () => {
   }) => {
     if (modalAction === "add") {
       try {
-        const response = await axios.post("http://localhost:3000/api/users", {
-          nombre_usuario,
-          email_usuario,
-          rol_usuario,
-          password,
+        const response = await axios.post(
+          "http://localhost:3000/api/users/create",
+          data
+        );
+        setUsers([...users, response.data.usuario]);
+        toast.success("¡Usuario añadido exitosamente!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
         });
-        setUsers([...users, response.data]); // Agregar el usuario al estado
         handleCloseModal();
       } catch (error) {
         console.error("Error al agregar el usuario:", error);
@@ -114,12 +122,7 @@ const AdminForm = () => {
       try {
         const response = await axios.put(
           `http://localhost:3000/api/users/${selectedUser.id_usuario}`,
-          {
-            nombre_usuario,
-            email_usuario,
-            rol_usuario,
-            password,
-          }
+          data
         );
         setUsers(
           users.map((u) =>
@@ -128,6 +131,15 @@ const AdminForm = () => {
               : u
           )
         );
+        toast.success("¡Usuario editado exitosamente!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
         handleCloseModal();
       } catch (error) {
         console.error("Error al editar el usuario:", error);
@@ -135,15 +147,6 @@ const AdminForm = () => {
     }
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="text-center">
-        <h1>Por favor, inicie sesión para acceder a esta página.</h1>
-      </div>
-    );
-  }
-
-  // Opcionalmente, puedes hacer algo con el rol, por ejemplo:
   if (userRole !== "administrador") {
     return (
       <div className="text-center">
@@ -154,10 +157,9 @@ const AdminForm = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Barra de navegación */}
       <Navbar isLoggedIn={true} />
       <header className="bg-black py-4">
-        <div className="container px-12 mx-auto relative text-sm text-black">
+        <div className="container px-12 mx-auto text-sm text-black">
           <div className="flex justify-between items-center">
             <h1 className="text-center text-white text-2xl font-bold">
               VISTA DE USUARIOS
@@ -172,7 +174,6 @@ const AdminForm = () => {
           </div>
         </div>
       </header>
-      {/* Tabla de usuarios */}
       <div className="overflow-x-auto mt-8">
         <table className="w-full border-collapse border border-gray-200">
           <thead className="bg-black text-white">
@@ -184,11 +185,10 @@ const AdminForm = () => {
             </tr>
           </thead>
           <tbody>
-            {/* Verificar que 'users' sea un arreglo antes de llamar a 'map' */}
-            {Array.isArray(users) && users.length > 0 ? (
+            {users.length > 0 ? (
               users.map((user) => (
                 <tr
-                  key={user.id_usuario}
+                  key={`user-${user.id_usuario}`}
                   className="even:bg-gray-100 hover:bg-gray-200 transition"
                 >
                   <td className="border border-gray-300 px-4 py-2 text-center">
@@ -201,7 +201,6 @@ const AdminForm = () => {
                     {user.rol_usuario}
                   </td>
                   <td className="border border-gray-300 px-4 py-2 text-center">
-                    {/* Botones de acción */}
                     <button
                       className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 mr-2"
                       onClick={() => handleOpenDeleteModal(user)}
@@ -227,7 +226,6 @@ const AdminForm = () => {
           </tbody>
         </table>
       </div>
-      {/* Modal de añadir o editar */}
       <ModalReusable
         isOpen={isModalOpen}
         onClose={handleCloseModal}
@@ -239,7 +237,6 @@ const AdminForm = () => {
           onSubmit={handleSubmitUser}
         />
       </ModalReusable>
-      {/* Modal de confirmación para eliminar */}
       <ModalReusable
         isOpen={isDeleteModalOpen}
         onClose={handleCloseDeleteModal}
@@ -264,6 +261,7 @@ const AdminForm = () => {
           </button>
         </div>
       </ModalReusable>
+      <ToastContainer />
     </div>
   );
 };

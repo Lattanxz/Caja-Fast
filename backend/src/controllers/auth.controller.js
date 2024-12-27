@@ -1,8 +1,8 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const pool = require("../config/db"); // Ajusta según la ubicación de tu configuración de base de datos
+const { Op } = require("sequelize");
+const Usuario = require("../models/usuario");
 
-// Controlador de login
 const login = async (req, res) => {
   console.log("Request body recibido:", req.body);
 
@@ -13,19 +13,16 @@ const login = async (req, res) => {
   }
 
   try {
-    // Buscar al usuario por email_usuario
-    const userQuery = "SELECT * FROM usuarios WHERE email_usuario = $1";
-    const userResult = await pool.query(userQuery, [email_usuario]);
+    // Buscar al usuario por email usando Sequelize
+    const user = await Usuario.findOne({ where: { email_usuario } });
 
-    if (userResult.rows.length === 0) {
+    if (!user) {
       return res
         .status(401)
         .json({ mensaje: "Email o contraseña incorrectos" });
     }
 
-    const user = userResult.rows[0];
-
-    // Comparar la contraseña enviada con la almacenada
+    // Comparar la contraseña enviada con la almacenada usando bcrypt
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -43,6 +40,7 @@ const login = async (req, res) => {
     };
     console.log("Payload del token:", payload);
 
+    // Generar el token
     const token = jwt.sign(payload, "tu_secreto", { expiresIn: "1h" });
 
     // Enviar el rol y el token en la respuesta, además del redireccionamiento
@@ -94,12 +92,13 @@ const registerUser = async (req, res) => {
 
   try {
     // Verificar si el usuario o el email ya existen
-    const userResult = await pool.query(
-      "SELECT * FROM usuarios WHERE nombre_usuario = $1 OR email_usuario = $2",
-      [nombre_usuario, email_usuario]
-    );
+    const existingUser = await Usuario.findOne({
+      where: {
+        [Op.or]: [{ nombre_usuario }, { email_usuario }],
+      },
+    });
 
-    if (userResult.rows.length > 0) {
+    if (existingUser) {
       return res
         .status(400)
         .json({ mensaje: "El usuario o el email ya están registrados" });
@@ -109,18 +108,25 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Insertar el nuevo usuario en la base de datos con rol "usuario"
-    const newUser = await pool.query(
-      "INSERT INTO usuarios (nombre_usuario, email_usuario, password, rol_usuario) VALUES ($1, $2, $3, 'usuario') RETURNING *",
-      [nombre_usuario, email_usuario, hashedPassword]
-    );
+    // Crear el nuevo usuario en la base de datos con rol "usuario"
+    const newUser = await Usuario.create({
+      nombre_usuario,
+      email_usuario,
+      password: hashedPassword,
+      rol_usuario: "usuario", // Rol predeterminado
+    });
 
     res.status(201).json({
       mensaje: "Usuario registrado exitosamente",
-      user: newUser.rows[0],
+      user: {
+        id_usuario: newUser.id_usuario,
+        nombre_usuario: newUser.nombre_usuario,
+        email_usuario: newUser.email_usuario,
+        rol_usuario: newUser.rol_usuario,
+      },
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error en el servidor:", err);
     res.status(500).json({ mensaje: "Error en el servidor" });
   }
 };

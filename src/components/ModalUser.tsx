@@ -4,13 +4,18 @@ const UserForm = ({
   onSubmit,
 }: {
   modalAction: "add" | "edit";
-  selectedUser: any; // Tipo de usuario según el modelo
+  selectedUser: {
+    nombre_usuario?: string;
+    email_usuario?: string;
+    rol_usuario?: string;
+    password?: string; // Este campo puede ser opcional al editar
+  } | null; // Puede ser null si no hay usuario seleccionado
   onSubmit: (data: {
     nombre_usuario: string;
     email_usuario: string;
     rol_usuario: string;
-    password: string; // Agregar password aquí
-  }) => void; // Cambié los nombres de las propiedades
+    password: string;
+  }) => void;
 }) => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -18,9 +23,9 @@ const UserForm = ({
     const nombre_usuario = formData.get("name") as string;
     const email_usuario = formData.get("email") as string;
     const rol_usuario = formData.get("role") as string;
-    const password = formData.get("password") as string; // Obtener el valor de la contraseña
+    const password = formData.get("password") as string;
 
-    onSubmit({ nombre_usuario, email_usuario, rol_usuario, password }); // Ahora se incluye la contraseña
+    onSubmit({ nombre_usuario, email_usuario, rol_usuario, password });
   };
 
   return (
@@ -34,9 +39,10 @@ const UserForm = ({
           id="name"
           name="name"
           defaultValue={
-            modalAction === "edit" ? selectedUser?.nombre_usuario : ""
+            modalAction === "edit" ? selectedUser?.nombre_usuario || "" : ""
           }
           className="w-full border border-gray-300 rounded p-2 text-black"
+          required
         />
       </div>
       <div>
@@ -48,9 +54,10 @@ const UserForm = ({
           id="email"
           name="email"
           defaultValue={
-            modalAction === "edit" ? selectedUser?.email_usuario : ""
+            modalAction === "edit" ? selectedUser?.email_usuario || "" : ""
           }
           className="w-full border border-gray-300 rounded p-2 text-black"
+          required
         />
       </div>
       <div>
@@ -61,9 +68,12 @@ const UserForm = ({
           id="role"
           name="role"
           defaultValue={
-            modalAction === "edit" ? selectedUser?.rol_usuario : "user"
+            modalAction === "edit"
+              ? selectedUser?.rol_usuario || "usuario"
+              : "usuario"
           }
           className="w-full border border-gray-300 rounded p-2 text-black"
+          required
         >
           <option value="administrador">Administrador</option>
           <option value="usuario">Usuario</option>
@@ -78,8 +88,14 @@ const UserForm = ({
           type="password"
           id="password"
           name="password"
-          defaultValue={modalAction === "edit" ? selectedUser?.password : ""}
+          defaultValue={modalAction === "edit" ? "" : ""} // No mostrar contraseña existente
+          placeholder={
+            modalAction === "edit"
+              ? "Ingrese una nueva contraseña (opcional)"
+              : ""
+          }
           className="w-full border border-gray-300 rounded p-2 text-black"
+          required={modalAction === "add"} // Opcional al editar
         />
       </div>
       <div className="flex">
