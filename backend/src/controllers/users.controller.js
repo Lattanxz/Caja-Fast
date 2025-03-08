@@ -1,33 +1,37 @@
 const bcrypt = require("bcryptjs");
 const saltRounds = 10;
-const Usuario = require("../models/Usuario");
-const Lista = require("../models/Lista");
-const ProductoLista = require("../models/ProductoLista");
+const {Usuario} = require("../models/usuario");
+const Lista = require("../models/lista");
+const ProductoLista = require("../models/productoLista");
 const Cajas = require("../models/cajas");
 const { sequelize } = require("../config/db");
 const { Op } = require("sequelize");
 
 // Crear USUARIO
 const createUser = async (req, res) => {
-  const { nombre_usuario, email_usuario, password, rol_usuario } = req.body;
+  const { nombre_usuario, email_usuario, password, id_rol, id_estado } = req.body;
 
   // Validación básica
-  if (!nombre_usuario || !email_usuario || !password || !rol_usuario) {
+  if (!nombre_usuario || !email_usuario || !password || !id_rol) {
     return res
       .status(400)
       .json({ mensaje: "Todos los campos son obligatorios" });
   }
 
+  // Si no se pasa un `id_estado`, se usa el valor por defecto (Activo)
+  const estado = id_estado || 1;
+
   try {
     // Encriptar la contraseña
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Crear el usuario utilizando Sequelize
+    // Crear el usuario utilizando Sequelize con el id_estado dinámico
     const newUser = await Usuario.create({
       nombre_usuario,
       email_usuario,
       password: hashedPassword,
-      rol_usuario,
+      id_rol,
+      id_estado: estado, // Usamos el valor pasado en la solicitud o 1 por defecto
     });
 
     // Responder con los datos del nuevo usuario
@@ -36,7 +40,8 @@ const createUser = async (req, res) => {
         id_usuario: newUser.id_usuario,
         nombre_usuario: newUser.nombre_usuario,
         email_usuario: newUser.email_usuario,
-        rol_usuario: newUser.rol_usuario,
+        id_rol: newUser.id_rol,
+        id_estado: newUser.id_estado,
       },
     });
   } catch (err) {
@@ -60,10 +65,10 @@ const getAllUsers = async (req, res) => {
 
 // Datos de usuario por ID
 const getUserById = async (req, res) => {
-  const { id_usuario } = req.params;
+  const { id } = req.params; // Cambié 'id_usuario' por 'id'
 
   try {
-    const user = await Usuario.findByPk(id_usuario);
+    const user = await Usuario.findByPk(id);
 
     if (!user) {
       return res.status(404).json({ mensaje: "Usuario no encontrado" });
@@ -76,10 +81,11 @@ const getUserById = async (req, res) => {
   }
 };
 
+
 // Actualizar user por id
 const updateUserById = async (req, res) => {
   const { id } = req.params;
-  const { nombre_usuario, email_usuario, password, rol_usuario } = req.body;
+  const { nombre_usuario, email_usuario, password, id_rol, id_estado } = req.body;
 
   try {
     let hashedPassword = null;
@@ -100,11 +106,12 @@ const updateUserById = async (req, res) => {
     await user.update({
       nombre_usuario,
       email_usuario,
-      password: hashedPassword || user.password, // Mantener la contraseña actual si no se proporciona una nueva
-      rol_usuario,
+      password: hashedPassword || user.password, 
+      id_rol,
+      id_estado,
     });
 
-    res.status(200).json(user);
+    res.status(200).json({ mensaje: "Usuario actualizado correctamente", usuario: user });
   } catch (err) {
     console.error("Error al actualizar el usuario:", err);
     res.status(500).json({ mensaje: "Error al actualizar el usuario" });

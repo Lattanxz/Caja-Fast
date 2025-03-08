@@ -1,30 +1,39 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db"); // Importa la configuración de la base de datos
+const { sequelize } = require("../config/db");
 
 const Lista = sequelize.define(
   "Lista",
   {
     id_lista: {
       type: DataTypes.INTEGER,
-      primaryKey: true, // Definir este campo como clave primaria
-      autoIncrement: true, // Auto incremento para que se genere automáticamente
+      primaryKey: true,
+      autoIncrement: true,
     },
     nombre_lista: {
-      type: DataTypes.STRING, // Define el nombre de la lista
-      allowNull: false, // El nombre no puede ser nulo
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     estado_seguridad: {
-      type: DataTypes.BOOLEAN, // Define si la lista es privada (true) o pública (false)
+      type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: true, // Por defecto, la lista será privada
+      defaultValue: true,
+    },
+    id_usuario: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "usuarios", // Nombre de la tabla a la que hace referencia
+        key: "id_usuario", // Campo en la tabla usuarios
+      },
     },
   },
   {
-    tableName: "listas", // El nombre de la tabla en la base de datos
-    timestamps: true, // Maneja `createdAt` y `updatedAt` automáticamente
-    createdAt: "fecha_creacion", // Mapea `createdAt` a `fecha_creacion`
-    updatedAt: false, // No necesitas un campo `updatedAt` en este caso
+    tableName: "listas",
+    timestamps: true,
+    createdAt: "fecha_creacion",
+    updatedAt: false,
   }
 );
 
 module.exports = Lista;
+

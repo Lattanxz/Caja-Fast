@@ -7,6 +7,7 @@ const ResetPassword = ({ onBack }: { onBack: () => void }) => {
   const [verificationCode, setVerificationCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
   const [notification, setNotification] = useState({
     show: false,
     message: "",
@@ -17,26 +18,78 @@ const ResetPassword = ({ onBack }: { onBack: () => void }) => {
     setTimeout(() => setNotification({ show: false, message: "" }), 3000);
   };
 
-  const handleVerification = (e: React.FormEvent) => {
+  const handleVerification = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (verificationStep === 1) {
-      showMessage(`Código enviado al correo: ${email}`);
-      setVerificationStep(2);
-    } else if (verificationStep === 2) {
-      if (verificationCode === "123456") {
-        showMessage("Código verificado correctamente.");
-        setVerificationStep(3);
-      } else {
-        showMessage("Código incorrecto. Inténtalo de nuevo.");
+    try {
+      if (verificationStep === 1) {
+        // Enviar correo con código de recuperación
+        const response = await fetch("http://localhost:3000/api/auth/request-password-reset", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email_usuario: email }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showMessage("Correo de recuperación enviado.");
+          setVerificationStep(2);
+        } else {
+          showMessage(data.mensaje || "Error al enviar el correo.");
+        }
+      } else if (verificationStep === 2) {
+        // Validar código de recuperación
+        const response = await fetch("http://localhost:3000/api/auth/verify-code", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email_usuario: email, verification_code: verificationCode }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showMessage("Código verificado correctamente.");
+          setUserId(data.id_usuario); // Guardar el ID del usuario en el estado
+          setVerificationStep(3);
+        } else {
+          showMessage(data.mensaje || "Código incorrecto.");
+        }
+      } else if (verificationStep === 3) {
+        // Validar que las contraseñas coincidan
+        if (newPassword !== confirmNewPassword) {
+          showMessage("Las contraseñas no coinciden.");
+          return;
+        }
+
+        console.log("ID Usuario para mi resetpassword:", userId);
+        console.log("Nueva Contraseña de mi resetpassword:", newPassword);
+
+        // Enviar nueva contraseña al backend
+        const response = await fetch("http://localhost:3000/api/auth/update-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id_usuario: userId, nueva_contrasena: newPassword }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showMessage("Contraseña actualizada correctamente.");
+          onBack(); // Volver a la pantalla anterior o al login
+        } else {
+          showMessage(data.mensaje || "Error al actualizar la contraseña.");
+        }
       }
-    } else if (verificationStep === 3) {
-      if (newPassword === confirmNewPassword) {
-        showMessage("Contraseña actualizada con éxito.");
-        onBack();
-      } else {
-        showMessage("Las contraseñas no coinciden. Inténtalo de nuevo.");
-      }
+    } catch (error) {
+      console.error("Error en la solicitud:", error);
+      showMessage("Hubo un problema con la solicitud.");
     }
   };
 

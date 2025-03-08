@@ -9,6 +9,7 @@ const {
   addProductToBox,
   deleteProductFromBox,
   createBox,
+  getBoxById,
 } = require("../controllers/boxes.controller");
 
 /**
@@ -367,5 +368,7 @@ router.delete("/:id_caja/products/:id_producto", deleteProductFromBox);
  *         description: Error interno del servidor
  */
 router.post("/create", authenticateToken, createBox);
+
+router.get("/:id_caja", getBoxById);
 
 module.exports = router;

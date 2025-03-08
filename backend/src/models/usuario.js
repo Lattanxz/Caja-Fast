@@ -1,43 +1,66 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db"); // Importa la configuración de la base de datos
+const { sequelize } = require("../config/db");
 
 const Usuario = sequelize.define(
   "Usuario",
   {
     id_usuario: {
       type: DataTypes.INTEGER,
-      primaryKey: true, // Clave primaria
-      autoIncrement: true, // Incremento automático
+      primaryKey: true,
+      autoIncrement: true,
     },
     nombre_usuario: {
       type: DataTypes.STRING,
-      allowNull: false, // Campo obligatorio
+      allowNull: false,
       validate: {
-        len: [3, 50], // Longitud entre 3 y 50 caracteres
+        len: [3, 50],
       },
     },
     email_usuario: {
       type: DataTypes.STRING,
-      allowNull: false, // Campo obligatorio
-      unique: true, // Valor único en la base de datos
+      allowNull: false,
+      unique: true,
       validate: {
-        isEmail: true, // Validar que sea un correo electrónico válido
+        isEmail: true,
       },
     },
     password: {
       type: DataTypes.STRING,
-      allowNull: false, // Campo obligatorio
-    },
-    rol_usuario: {
-      type: DataTypes.ENUM("usuario", "administrador"), // Define los roles posibles
       allowNull: false,
-      defaultValue: "usuario", // Valor por defecto
+    },
+    id_rol: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "roles",
+        key: "id_rol",
+      },
+    },
+    id_estado: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "estados",
+        key: "id_estado",
+      },
+    },
+    verification_code: {
+      type: DataTypes.STRING(6),
+      allowNull: true,
+    },
+    max_cajas: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    max_listas_prod: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
   },
   {
-    tableName: "usuarios", // Nombre de la tabla en la base de datos
-    timestamps: false, // Agrega createdAt y updatedAt automáticamente
+    tableName: "usuarios",
+    timestamps: false,
   }
 );
 
-module.exports = Usuario;
+module.exports = {Usuario};

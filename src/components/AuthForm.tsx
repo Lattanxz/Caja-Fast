@@ -4,8 +4,7 @@ import HomeButton from "./HomeButton";
 import ResetPassword from "./ResetPassword";
 import authImage from "../assets/imgs/camarera-con-caja-registradora.jpeg";
 import logo from "../assets/imgs/logo_transparent cut.png";
-import { ToastContainer, toast } from "react-toastify"; // Importa el ToastContainer y toast
-import "react-toastify/dist/ReactToastify.css"; // Importa los estilos de Toastify
+import { toast } from 'sonner';
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -61,6 +60,7 @@ const AuthForm = () => {
       if (response.ok) {
         if (isLogin) {
           console.log("Login exitoso:", data);
+          toast.success("Login exitoso");
 
           // Guardar el token en localStorage
           localStorage.setItem("token", data.token);
@@ -72,32 +72,20 @@ const AuthForm = () => {
           // Redirigir según el rol
           window.location.href = data.redirect;
         } else {
+          toast.success("Registro exitoso");
           // Registro exitoso
-          toast.success(
-            "¡Usuario registrado exitosamente! Ahora puedes iniciar sesión.",
-            {
-              position: "top-right",
-              autoClose: 3000,
-              hideProgressBar: true,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-              progress: undefined,
-            }
-          );
           toggleAuthForm(); // Cambiar al formulario de login
         }
       } else {
         console.error("Error:", data.mensaje);
-        alert(data.mensaje); // Mostrar mensaje de error
+        toast.error(data.mensaje);
       }
     } catch (err) {
       console.error("Error al conectar con el servidor:", err);
-      alert(
-        "Error al conectar con el servidor. Por favor, intenta nuevamente."
-      );
+      toast.error("Error al conectar con el servidor. Por favor, intenta nuevamente.");
     }
   };
+
 
   return (
     <div className="h-screen flex">
@@ -224,7 +212,6 @@ const AuthForm = () => {
           )}
         </div>
       </div>
-      <ToastContainer />
     </div>
   );
 };

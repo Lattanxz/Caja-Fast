@@ -1,4 +1,3 @@
-// models/Lista.js
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db"); // Importa la configuración de la base de datos
 
@@ -7,23 +6,34 @@ const MetodoPago = sequelize.define(
   {
     id_metodo_pago: {
       type: DataTypes.INTEGER,
-      primaryKey: true, // Definir este campo como clave primaria
-      autoIncrement: true, // Auto incremento para que se genere automáticamente
+      primaryKey: true, // Clave primaria
+      autoIncrement: true, // Se autoincrementa
     },
     tipo_metodo_pago: {
-      type: DataTypes.STRING,
-      primaryKey: true, // Definir este campo como clave primaria
-      autoIncrement: true, // Auto incremento para que se genere automáticamente
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      unique: true, // Evita duplicados
     },
     descripcion: {
-      type: DataTypes.TEXT, // Define el nombre de la lista
-      allowNull: false, // El nombre no puede ser nulo
+      type: DataTypes.TEXT, // Descripción opcional del método de pago
+      allowNull: true, // Puede ser nulo
     },
   },
   {
-    tableName: "metodo_pago", // El nombre de la tabla en la base de datos
-    timestamps: false,
+    tableName: "metodo_pago", // Nombre de la tabla en la base de datos
+    timestamps: false, // No agrega createdAt y updatedAt
   }
 );
 
-module.exports = MetodoPago;
+async function initializeMetodoPago() {
+  const metodos = ["Credito", "Debito", "Efectivo", "Transferencia"];
+  for (const metodo of metodos) {
+    await MetodoPago.findOrCreate({
+      where: { tipo_metodo_pago: metodo },
+      defaults: { tipo_metodo_pago: metodo },
+    });
+  }
+  console.log("✅ Métodos de pago inicializados correctamente");
+}
+
+module.exports = { MetodoPago, initializeMetodoPago };

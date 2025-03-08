@@ -1,31 +1,50 @@
+import React, { useState } from "react";
+
 const UserForm = ({
   modalAction,
   selectedUser,
   onSubmit,
+  onChangeEstado, // <-- Agregado aquí
 }: {
   modalAction: "add" | "edit";
   selectedUser: {
     nombre_usuario?: string;
     email_usuario?: string;
-    rol_usuario?: string;
-    password?: string; // Este campo puede ser opcional al editar
-  } | null; // Puede ser null si no hay usuario seleccionado
+    id_rol?: number;
+    id_estado?: number;
+    password?: string;
+  } | null;
   onSubmit: (data: {
     nombre_usuario: string;
     email_usuario: string;
-    rol_usuario: string;
+    id_estado: number;
+    id_rol: number;
     password: string;
   }) => void;
+  onChangeEstado?: React.Dispatch<React.SetStateAction<string>>; // <-- Agregado aquí
 }) => {
+  const [estado, setEstado] = useState(
+    selectedUser?.id_estado?.toString() || "1"
+  );
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
     const formData = new FormData(e.currentTarget);
     const nombre_usuario = formData.get("name") as string;
     const email_usuario = formData.get("email") as string;
-    const rol_usuario = formData.get("role") as string;
+    const id_rol = parseInt(formData.get("role") as string, 10);
     const password = formData.get("password") as string;
+    const id_estado = parseInt(estado, 10);
 
-    onSubmit({ nombre_usuario, email_usuario, rol_usuario, password });
+    onSubmit({ nombre_usuario, email_usuario, id_rol, id_estado, password });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setEstado(e.target.value);
+    if (onChangeEstado) {
+      onChangeEstado(e.target.value); // <-- Llamamos a la función si está definida
+    }
   };
 
   return (
@@ -38,9 +57,8 @@ const UserForm = ({
           type="text"
           id="name"
           name="name"
-          defaultValue={
-            modalAction === "edit" ? selectedUser?.nombre_usuario || "" : ""
-          }
+          placeholder="Nombre de usuario"
+          defaultValue={modalAction === "edit" ? selectedUser?.nombre_usuario || "" : ""}
           className="w-full border border-gray-300 rounded p-2 text-black"
           required
         />
@@ -50,12 +68,11 @@ const UserForm = ({
           Email
         </label>
         <input
+          placeholder="Email Personal"
           type="email"
           id="email"
           name="email"
-          defaultValue={
-            modalAction === "edit" ? selectedUser?.email_usuario || "" : ""
-          }
+          defaultValue={modalAction === "edit" ? selectedUser?.email_usuario || "" : ""}
           className="w-full border border-gray-300 rounded p-2 text-black"
           required
         />
@@ -67,19 +84,31 @@ const UserForm = ({
         <select
           id="role"
           name="role"
-          defaultValue={
-            modalAction === "edit"
-              ? selectedUser?.rol_usuario || "usuario"
-              : "usuario"
-          }
+          defaultValue={modalAction === "edit" ? selectedUser?.id_rol?.toString() || "2" : "2"}
           className="w-full border border-gray-300 rounded p-2 text-black"
           required
         >
-          <option value="administrador">Administrador</option>
-          <option value="usuario">Usuario</option>
+          <option value="1">Usuario</option>
+          <option value="2">Administrador</option>
         </select>
       </div>
-      {/* Campo de contraseña */}
+      <div>
+        <label htmlFor="estado" className="block">
+          Estado
+        </label>
+        <select
+          id="estado"
+          name="estado"
+          value={estado}
+          onChange={handleChange}
+          className="w-full border border-gray-300 rounded p-2 text-black"
+          required
+        >
+          <option value="1">Activo</option>
+          <option value="2">Inactivo</option>
+          <option value="3">Suspendido</option>
+        </select>
+      </div>
       <div>
         <label htmlFor="password" className="block">
           Contraseña
@@ -88,14 +117,9 @@ const UserForm = ({
           type="password"
           id="password"
           name="password"
-          defaultValue={modalAction === "edit" ? "" : ""} // No mostrar contraseña existente
-          placeholder={
-            modalAction === "edit"
-              ? "Ingrese una nueva contraseña (opcional)"
-              : ""
-          }
+          placeholder={modalAction === "edit" ? "Ingrese una nueva contraseña (opcional)" : "Ingrese una contraseña"}
           className="w-full border border-gray-300 rounded p-2 text-black"
-          required={modalAction === "add"} // Opcional al editar
+          required={modalAction === "add"}
         />
       </div>
       <div className="flex">

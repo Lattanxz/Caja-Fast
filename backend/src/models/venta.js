@@ -1,40 +1,55 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db"); // Importa la configuración de la base de datos
+const { sequelize } = require("../config/db");
 
 const Venta = sequelize.define(
   "Venta",
   {
     id_venta: {
       type: DataTypes.INTEGER,
-      primaryKey: true, // Clave primaria
-      autoIncrement: true, // Incremento automático
+      primaryKey: true,
+      autoIncrement: true,
     },
-    id_usuario: {
+    id_caja: {
       type: DataTypes.INTEGER,
-      allowNull: false, // Campo obligatorio
+      allowNull: false,
       references: {
-        model: "usuarios", // Relación con la tabla usuarios
-        key: "id_usuario",
+        model: "cajas", // Relación con la tabla 'cajas'
+        key: "id_caja",
       },
     },
-    total: {
-      type: DataTypes.DECIMAL(10, 2), // Total de la venta, con dos decimales
+    id_metodo_pago: {
+      type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0.0, // Valor por defecto
+      references: {
+        model: "metodo_pago", // Relación con la tabla 'metodo_pago'
+        key: "id_metodo_pago",
+      },
+    },
+    cantidad: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    nombre_caja: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    nombre_producto: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+    },
+    precio_producto: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
     },
     fecha_venta: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW, // Fecha por defecto como la actual
-    },
-    metodo_pago: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
   },
   {
-    tableName: "ventas", // Nombre de la tabla en la base de datos
-    timestamps: false, // No agrega automáticamente createdAt y updatedAt
+    tableName: "ventas",
+    timestamps: false,
   }
 );
 

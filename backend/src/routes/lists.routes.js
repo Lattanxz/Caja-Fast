@@ -7,6 +7,8 @@ const {
   removeList,
   getAllLists,
   generateList,
+  updateListName,
+  getListsByUser,
 } = require("../controllers/lists.controller");
 const { authenticateToken } = require("../middleware/auth.middleware");
 const router = express.Router();
@@ -203,5 +205,9 @@ router.get("/", getAllLists);
 
 // Generar una lista (NO TOCAR)
 router.post("/", authenticateToken, generateList);
+
+router.put("/:id_lista", updateListName);
+
+router.get("/:id_usuario/products", getListsByUser);
 
 module.exports = router;

@@ -6,6 +6,7 @@ const {
   updateProduct,
   deleteProduct,
   addProductToBox,
+  getProductsByListId,
 } = require("../controllers/products.controller");
 
 const router = express.Router();
@@ -51,7 +52,7 @@ router.get("/", getAllProducts);
  *       404:
  *         description: Producto no encontrado
  */
-router.get("/:id", getProductById);
+router.get("/:id_producto", getProductById);
 
 /**
  * @swagger
@@ -114,7 +115,7 @@ router.post("/", createProduct);
  *       404:
  *         description: Producto no encontrado
  */
-router.put("/:id", updateProduct);
+router.put("/:id_producto", updateProduct);
 
 /**
  * @swagger
@@ -137,7 +138,7 @@ router.put("/:id", updateProduct);
  *       404:
  *         description: Producto no encontrado
  */
-router.delete("/:id", deleteProduct);
+router.delete("/:id_producto", deleteProduct);
 
 /**
  * @swagger
@@ -214,5 +215,7 @@ router.delete("/:id", deleteProduct);
  *                   example: Error al agregar el producto a la caja
  */
 router.post("/box", addProductToBox);
+
+router.get("/list/:id_lista", getProductsByListId);
 
 module.exports = router;

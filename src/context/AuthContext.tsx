@@ -5,80 +5,73 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { jwtDecode } from "jwt-decode"; // Asegúrate de que esta importación es correcta
+import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 
 // Definir los tipos de estado
 interface AuthContextType {
   isLoggedIn: boolean;
-  userRole: string;
+  userRole: number | null;
   userId: number | null;
-  token: string | null; // Agregar token al contexto
+  emailUsuario: string | null; // Agregado email_usuario
+  token: string | null;
   setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
-  setUserRole: React.Dispatch<React.SetStateAction<string>>;
+  setUserRole: React.Dispatch<React.SetStateAction<number | null>>;
   setUserId: React.Dispatch<React.SetStateAction<number | null>>;
-  setToken: React.Dispatch<React.SetStateAction<string | null>>; // Función para actualizar el token
+  setEmailUsuario: React.Dispatch<React.SetStateAction<string | null>>; // Setter para email_usuario
+  setToken: React.Dispatch<React.SetStateAction<string | null>>;
   loading: boolean;
   error: string | null;
+  logout: () => void; // Nueva función logout
 }
 
-// Tipo para los props del proveedor
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Tipo para la respuesta de la API
 interface AuthStatusResponse {
   isLoggedIn: boolean;
-  role: string;
+  role: number;
   userId: number;
+  emailUsuario: string; // Agregado email_usuario
 }
 
-// Crear el contexto con un valor inicial vacío pero con el tipo adecuado
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Proveedor del contexto
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<string>(""); // Mantener el rol
+  const [userRole, setUserRole] = useState<number | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token")
-  );
-  const [loading, setLoading] = useState<boolean>(true); // Estado de carga
-  const [error, setError] = useState<string | null>(null); // Estado para manejar errores
+  const [emailUsuario, setEmailUsuario] = useState<string | null>(null); // Estado para email_usuario
+  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Verificar sesión al cargar la página
   useEffect(() => {
+    let isCancelled = false;
+
     const checkAuthStatus = async () => {
       try {
         setLoading(true);
-
         if (!token) {
           setIsLoggedIn(false);
           setError("No token found.");
           return;
         }
 
-        // Verifica el token en consola antes de usarlo
-        console.log("Token en AuthContext:", token);
-
-        // Decodificar el token para verificar si está expirado
         const decodedToken = jwtDecode(token) as {
           exp: number;
           id_usuario: number;
+          email_usuario: string; // Decodificar email_usuario también
         };
-        console.log("Token decodificado:", decodedToken);
 
         const currentDate = Math.floor(Date.now() / 1000);
         if (decodedToken.exp < currentDate) {
-          console.log("El token ha expirado.");
           setIsLoggedIn(false);
           setError("El token ha expirado.");
           return;
         }
 
-        // Solicitud al backend
         const response = await axios.get<AuthStatusResponse>(
           "http://localhost:3000/api/auth/status",
           {
@@ -89,25 +82,54 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }
         );
 
-        setIsLoggedIn(response.data.isLoggedIn);
-        setUserRole(response.data.role || "");
-        setUserId(decodedToken.id_usuario || null);
-        setToken(token);
-        setError(null);
-        console.log("Estado de autenticación:", response.data);
+        if (!isCancelled) {
+          setIsLoggedIn(response.data.isLoggedIn);
+          setUserRole(response.data.role);
+          setUserId(decodedToken.id_usuario);
+          setEmailUsuario(decodedToken.email_usuario);
+          setToken(token);
+          setError(null);
+        }
       } catch (err) {
-        setIsLoggedIn(false);
-        setUserRole("");
-        setUserId(null);
-        setError("No se pudo verificar el estado de autenticación.");
-        console.error("Error al verificar el estado de autenticación:", err);
+        if (!isCancelled) {
+          setIsLoggedIn(false);
+          setUserRole(null);
+          setUserId(null);
+          setEmailUsuario(null);
+          setError("No se pudo verificar el estado de autenticación.");
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
     checkAuthStatus();
-  }, []);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [token]);
+
+  // Función logout
+  const logout = () => {
+    setIsLoggedIn(false);
+    setUserRole(null);
+    setUserId(null);
+    setEmailUsuario(null);
+    setToken(null);
+    localStorage.removeItem("token"); // Eliminar el token de localStorage
+    // Aquí también puedes hacer una llamada al backend para limpiar las cookies
+    axios
+      .post("http://localhost:3000/api/auth/logout") // Asegúrate de tener el endpoint correcto
+      .then(() => {
+        console.log("Sesión cerrada correctamente");
+      })
+      .catch((err) => {
+        console.error("Error al cerrar sesión en el servidor", err);
+      });
+  };
 
   return (
     <AuthContext.Provider
@@ -115,13 +137,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         isLoggedIn,
         userRole,
         userId,
-        token, // Ahora puedes acceder al token desde cualquier componente
+        emailUsuario,
+        token,
         setIsLoggedIn,
         setUserRole,
         setUserId,
-        setToken, // Proporcionamos el setter para actualizar el token
+        setEmailUsuario,
+        setToken,
         loading,
         error,
+        logout, // Proveer la función logout en el contexto
       }}
     >
       {children}
@@ -129,7 +154,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
 };
 
-// Hook para usar el contexto en cualquier parte
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {

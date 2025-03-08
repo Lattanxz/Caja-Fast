@@ -8,12 +8,13 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 const ProfileMenu = () => {
-  const { isLoggedIn, setIsLoggedIn, userId, token } = useAuth(); // Asumiendo que el token también está en tu contexto
+  const { isLoggedIn, setIsLoggedIn, userId, token, logout } = useAuth(); // Obtenemos logout
   const [userData, setUserData] = useState<{ name: string; role: string }>({
     name: "",
     role: "",
   });
   const navigate = useNavigate();
+  
   // Obtener la información del usuario desde la API usando axios
   useEffect(() => {
     if (userId && token) {
@@ -71,7 +72,7 @@ const ProfileMenu = () => {
 
       // Si la respuesta es exitosa, actualiza el estado de autenticación
       if (response.status === 200) {
-        setIsLoggedIn(false); // Ahora puedes usar esta función porque está en el contexto
+        logout(); // Limpiar el contexto de autenticación
 
         // Redirige al usuario a la página de login
         navigate("/auth");

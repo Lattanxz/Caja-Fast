@@ -1,4 +1,6 @@
 const pool = require("../config/db");
+const {Usuario} = require("../models/usuario"); // Asegúrate de importar el modelo correcto
+
 
 // Obtener el perfil de un usuario
 const getProfile = async (req, res) => {
@@ -23,51 +25,36 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   const { nombre_usuario, email_usuario } = req.body;
 
-  // Verifica que el cuerpo de la solicitud contenga los campos necesarios
+  // Verifica que los datos sean válidos
   if (!nombre_usuario || !email_usuario) {
-    return res
-      .status(400)
-      .json({ message: "Nombre de usuario y email son requeridos" });
+    return res.status(400).json({
+      message: "Nombre de usuario y email son requeridos",
+    });
   }
 
-  const userId = req.user.id_usuario; // Obtén el ID del usuario desde el token decodificado
+  const userId = req.user.id_usuario; // Obtiene el ID del usuario autenticado desde el token
 
   try {
-    // Verifica si el usuario existe en la base de datos
-    const userCheckQuery = "SELECT * FROM usuarios WHERE id_usuario = $1";
-    const userCheckResult = await pool.query(userCheckQuery, [userId]);
+    // Busca el usuario por ID en la base de datos
+    const usuario = await Usuario.findByPk(userId);
 
-    if (userCheckResult.rows.length === 0) {
+    if (!usuario) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    // Actualiza el nombre y el email del usuario en la base de datos
-    const updateQuery = `
-        UPDATE usuarios
-        SET nombre_usuario = $1, email_usuario = $2
-        WHERE id_usuario = $3
-        RETURNING id_usuario, nombre_usuario, email_usuario, rol_usuario;
-      `;
-
-    const result = await pool.query(updateQuery, [
+    // Actualiza el usuario
+    await usuario.update({
       nombre_usuario,
       email_usuario,
-      userId,
-    ]);
+    });
 
-    if (result.rows.length === 0) {
-      return res.status(400).json({ message: "Error al actualizar el perfil" });
-    }
-
-    const updatedUser = result.rows[0];
-
-    res.json({
+    res.status(200).json({
       message: "Perfil actualizado con éxito",
       user: {
-        id_usuario: updatedUser.id_usuario,
-        nombre_usuario: updatedUser.nombre_usuario,
-        email_usuario: updatedUser.email_usuario,
-        rol_usuario: updatedUser.rol_usuario,
+        id_usuario: usuario.id_usuario,
+        nombre_usuario: usuario.nombre_usuario,
+        email_usuario: usuario.email_usuario,
+        rol_usuario: usuario.rol_usuario, // Si en la base de datos existe este campo
       },
     });
   } catch (error) {

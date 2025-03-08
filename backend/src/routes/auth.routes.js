@@ -6,6 +6,9 @@ const {
   updatePassword,
   logoutSession,
   checkAuthStatus,
+  requestPasswordReset,
+  resetPassword,
+  verifyCode,
 } = require("../controllers/auth.controller");
 
 /**
@@ -267,5 +270,181 @@ router.post("/logout", logoutSession);
  *         description: Error en el servidor.
  */
 router.get("/status", checkAuthStatus);
+
+ /**
+ * @swagger
+ * /api/auth/request-password-reset:
+ *   post:
+ *     summary: Solicitud de restablecimiento de contraseña
+ *     description: Permite a los usuarios solicitar un restablecimiento de contraseña proporcionando su email.
+ *     tags:
+ *       - Autenticación
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email_usuario:
+ *                 type: string
+ *                 example: "usuario@example.com"
+ *                 description: El email del usuario que solicita el restablecimiento de contraseña.
+ *             required:
+ *               - email_usuario
+ *     responses:
+ *       200:
+ *         description: Solicitud de restablecimiento de contraseña exitosa
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: "Solicitud de restablecimiento de contraseña enviada"
+ *       400:
+ *         description: Solicitud incorrecta, falta el email.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: "Falta el email"
+ *       500:
+ *         description: Error interno del servidor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: "Error en el servidor"
+ */
+router.post("/request-password-reset", requestPasswordReset);
+
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Restablecimiento de contraseña
+ *     description: Permite a los usuarios restablecer su contraseña utilizando un token de restablecimiento y la nueva contraseña.
+ *     tags:
+ *       - Autenticación
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *                 description: El token de restablecimiento de contraseña.
+ *               nueva_contrasena:
+ *                 type: string
+ *                 example: "nuevaContraseña123"
+ *                 description: La nueva contraseña del usuario.
+ *             required:
+ *               - token
+ *               - nueva_contrasena
+ *     responses:
+ *       200:
+ *         description: Contraseña restablecida exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: "Contraseña restablecida exitosamente"
+ *       400:
+ *         description: Solicitud incorrecta, faltan campos requeridos o token inválido.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: "Faltan campos requeridos o token inválido"
+ *       500:
+ *         description: Error interno del servidor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: "Error en el servidor"
+ */
+router.post("/reset-password", resetPassword);
+
+/**
+ * @swagger
+ * /api/auth/verify-code:
+ *   post:
+ *     summary: Verificación de código
+ *     description: Permite a los usuarios verificar un código de restablecimiento de contraseña.
+ *     tags:
+ *       - Autenticación
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email_usuario:
+ *                 type: string
+ *                 example: "usuario@example.com"
+ *                 description: El email del usuario que solicita la verificación del código.
+ *               codigo:
+ *                 type: string
+ *                 example: "123456"
+ *                 description: El código de verificación enviado al email del usuario.
+ *             required:
+ *               - email_usuario
+ *               - codigo
+ *     responses:
+ *       200:
+ *         description: Código verificado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: "Código verificado exitosamente"
+ *       400:
+ *         description: Solicitud incorrecta, faltan campos requeridos o código inválido.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: "Faltan campos requeridos o código inválido"
+ *       500:
+ *         description: Error interno del servidor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mensaje:
+ *                   type: string
+ *                   example: "Error en el servidor"
+ */
+router.post("/verify-code", verifyCode);
 
 module.exports = router;

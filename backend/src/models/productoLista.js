@@ -6,26 +6,20 @@ const ProductoLista = sequelize.define(
   {
     id_producto: {
       type: DataTypes.INTEGER,
-      primaryKey: true, // Definir este campo como clave primaria
+      allowNull: false, 
+      primaryKey: true, 
       references: {
-        model: "productos", // Relacionar con la tabla productos
-        key: "id_producto", // Clave primaria de la tabla productos
+        model: "productos", 
+        key: "id_producto", 
       },
-    },
+    },   
     id_lista: {
       type: DataTypes.INTEGER,
-      primaryKey: true, // Definir este campo como clave primaria
+      allowNull: false, 
+      primaryKey: true, 
       references: {
-        model: "listas", // Relacionar con la tabla listas
-        key: "id_lista", // Clave primaria de la tabla listas
-      },
-    },
-    cantidad: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 1, // Valor predeterminado en caso de no especificarlo
-      validate: {
-        min: 0, // Validar que sea mayor o igual a 0
+        model: "listas", 
+        key: "id_lista", 
       },
     },
   },

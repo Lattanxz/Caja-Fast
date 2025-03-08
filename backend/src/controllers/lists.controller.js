@@ -1,40 +1,47 @@
 const pool = require("../config/db");
+const Listas = require("../models/lista");
+const Producto = require("../models/productosGeneral");
+const ProductoLista = require("../models/productoLista");
 
 // Crear una lista
 const createList = async (req, res) => {
+  const { nombre_lista, estado_seguridad, id_usuario, productos } = req.body;
+
+  if (!id_usuario) {
+    return res
+      .status(400)
+      .json({ message: "El campo id_usuario es obligatorio." });
+  }
+
   try {
-    const { nombre_lista, estado_seguridad, id_usuario } = req.body;
-
-    // Verificar si se proporciona un id_usuario
-    if (!id_usuario) {
-      return res
-        .status(400)
-        .json({ message: "El campo id_usuario es obligatorio." });
-    }
-
-    const query = `
-        INSERT INTO listas (nombre_lista, estado_seguridad, id_usuario, fecha_creacion)
-        VALUES ($1, $2, $3, NOW())
-        RETURNING id_lista;
-      `;
-
-    const result = await pool.query(query, [
+    // Crear la nueva lista
+    const nuevaLista = await Listas.create({
       nombre_lista,
       estado_seguridad,
       id_usuario,
-    ]);
+      fecha_creacion: new Date()
+    });
 
-    const idLista = result.rows[0].id_lista;
+    if (productos && productos.length > 0) {
+      // Asociar productos a la lista en la tabla intermedia producto_lista
+      const productosLista = productos.map((producto) => ({
+        id_lista: nuevaLista.id_lista,
+        id_producto: producto.id_producto // Accedemos al id_producto dentro del objeto
+      }));
+      
+      await ProductoLista.bulkCreate(productosLista);
+    }
 
     res.status(201).json({
-      message: "Lista creada exitosamente.",
-      id_lista: idLista,
+      message: "Lista creada con productos exitosamente.",
+      id_lista: nuevaLista.id_lista
     });
   } catch (err) {
     console.error("Error al crear la lista:", err);
     res.status(500).json({ message: "Error al crear la lista." });
   }
 };
+
 
 const addProductToList = async (req, res) => {
   try {
@@ -97,30 +104,39 @@ const getProductsFromList = async (req, res) => {
   console.log("ID de lista recibido:", id_lista);
 
   try {
-    const query = `
-        SELECT p.id_producto, p.nombre_producto, p.precio_producto, p.descripcion_producto
-        FROM productos p
-        JOIN productos_listas pl ON p.id_producto = pl.id_producto
-        WHERE pl.id_lista = $1;
-      `;
-    const result = await pool.query(query, [id_lista]);
+    const lista = await Listas.findOne({
+      where: { id_lista },
+      include: [
+        {
+          model: Producto,
+          through: { attributes: [] }, // Excluimos atributos de la tabla intermedia
+          attributes: ['id_producto', 'nombre_producto', 'precio_producto', 'descripcion_producto']
+        }
+      ]
+    });
 
-    console.log(result.rows); // Agregar esto para ver el resultado de la consulta en el servidor
+    if (!lista) {
+      return res.status(200).json({
+        message: "No hay ninguna lista creada aún.",
+        productos: []
+      });
+    }
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        message: "No se encontraron productos para esta lista.",
+    if (lista.Productos.length === 0) {
+      return res.status(200).json({
+        message: "Esta lista no tiene productos aún.",
+        productos: []
       });
     }
 
     res.status(200).json({
       message: "Productos obtenidos exitosamente",
-      productos: result.rows,
+      productos: lista.Productos
     });
   } catch (error) {
     console.error("Error al obtener los productos de la lista:", error);
     res.status(500).json({
-      message: "Error al obtener los productos de la lista",
+      message: "Error al obtener los productos de la lista"
     });
   }
 };
@@ -167,29 +183,20 @@ const removeList = async (req, res) => {
   const { id_lista } = req.params;
 
   try {
-    // Verificar si la lista existe antes de eliminarla
-    const checkListQuery = `
-        SELECT id_lista FROM listas WHERE id_lista = $1;
-      `;
-    const checkListResult = await pool.query(checkListQuery, [id_lista]);
+    // Verificar si la lista existe antes de eliminarla usando Sequelize
+    const list = await Listas.findOne({ where: { id_lista } });
 
-    if (checkListResult.rows.length === 0) {
+    if (!list) {
       return res.status(404).json({
         message: "Lista no encontrada.",
       });
     }
 
-    // Eliminar productos asociados a la lista en productos_listas
-    const deleteProductsFromListQuery = `
-        DELETE FROM productos_listas WHERE id_lista = $1;
-      `;
-    await pool.query(deleteProductsFromListQuery, [id_lista]);
+    // Eliminar los productos asociados a la lista en productos_listas
+    await ProductoLista.destroy({ where: { id_lista } });
 
     // Eliminar la lista de la tabla listas
-    const deleteListQuery = `
-        DELETE FROM listas WHERE id_lista = $1;
-      `;
-    await pool.query(deleteListQuery, [id_lista]);
+    await list.destroy();
 
     res.status(200).json({
       message: "Lista y productos asociados eliminados exitosamente.",
@@ -204,55 +211,37 @@ const removeList = async (req, res) => {
 
 const getAllLists = async (req, res) => {
   try {
-    // Consulta para obtener listas y sus productos en una sola operación
-    const query = `
-      SELECT 
-        l.id_lista, 
-        l.nombre_lista, 
-        p.id_producto, 
-        p.nombre_producto
-      FROM listas l
-      LEFT JOIN productos_listas pl ON l.id_lista = pl.id_lista
-      LEFT JOIN productos p ON pl.id_producto = p.id_producto
-      ORDER BY l.id_lista, p.nombre_producto;
-    `;
-    const result = await pool.query(query);
+    // Obtener todas las listas con sus productos asociados
+    const listas = await Listas.findAll({
+      include: [
+        {
+          model: Producto,
+          through: { attributes: [] }, // No queremos incluir los atributos de la tabla intermedia
+          attributes: ["id_producto", "nombre_producto"],
+        },
+      ],
+      order: [["id_lista", "ASC"], [Producto, "nombre_producto", "ASC"]],
+    });
 
-    // Transformar los datos para agrupar productos por lista
-    const listsWithProducts = result.rows.reduce((acc, row) => {
-      const { id_lista, nombre_lista, id_producto, nombre_producto } = row;
+    // Transformar los datos para que coincidan con el formato esperado
+    const listsWithProducts = listas.map((lista) => ({
+      id_lista: lista.id_lista,
+      nombre_lista: lista.nombre_lista,
+      productos: lista.Productos.map((producto) => ({
+        id_producto: producto.id_producto,
+        nombre_producto: producto.nombre_producto,
+      })),
+    }));
 
-      // Verificar si la lista ya existe en el acumulador
-      let list = acc.find((l) => l.id_lista === id_lista);
-      if (!list) {
-        list = { id_lista, nombre_lista, productos: [] };
-        acc.push(list);
-      }
-
-      // Agregar el producto si existe
-      if (id_producto) {
-        list.productos.push({ id_producto, nombre_producto });
-      }
-
-      return acc;
-    }, []);
-
+    // Enviar el resultado como un array (incluso si está vacío)
     res.status(200).json(listsWithProducts);
   } catch (error) {
     console.error("Error al obtener las listas y sus productos:", error);
-    res.status(500).json({ message: "Error al obtener las listas", error });
+    res.status(500).json({ message: "Error al obtener las listas" });
   }
 };
 
 const generateList = async (req, res) => {
-  console.log("Datos recibidos en el backend:", req.body);
-  console.log("ID del usuario extraído del token:", req.user.id_usuario);
-  console.log("Datos recibidos en el backend:", req.body); // Verifica que el cuerpo de la solicitud llegue bien
-  console.log("ID del usuario extraído del token:", req.user.id_usuario); // Verifica que el ID del usuario esté correcto}
-  console.log("Token recibido:", req.headers["authorization"]);
-  console.log("Datos del cuerpo:", req.body);
-  console.log("Usuario del token:", req.user);
-
   const { nombre_lista } = req.body;
   const { id_usuario } = req.user; // Extraemos el id_usuario del token (req.user)
 
@@ -262,43 +251,81 @@ const generateList = async (req, res) => {
       .json({ error: "El nombre de la lista es obligatorio" });
   }
 
-  const client = await pool.connect();
+  const transaction = await sequelize.transaction();
   try {
-    await client.query("BEGIN"); // Inicia la transacción
-
     // Crear la lista
-    const insertListQuery = `
-        INSERT INTO listas (nombre_lista, fecha_creacion, estado_seguridad)
-        VALUES ($1, NOW(), true)
-        RETURNING id_lista, fecha_creacion, estado_seguridad;
-      `;
-    const result = await client.query(insertListQuery, [nombre_lista]);
-
-    const id_lista = result.rows[0].id_lista;
+    const nuevaLista = await Lista.create(
+      {
+        nombre_lista,
+        fecha_creacion: new Date(),
+        estado_seguridad: true,
+      },
+      { transaction }
+    );
 
     // Insertar el id_usuario en listas_usuarios
-    const insertListUserQuery = `
-        INSERT INTO listas_usuario (id_lista, id_usuario)
-        VALUES ($1, $2);
-      `;
-    await client.query(insertListUserQuery, [id_lista, id_usuario]);
+    await ListaUsuario.create(
+      {
+        id_lista: nuevaLista.id_lista,
+        id_usuario,
+      },
+      { transaction }
+    );
 
-    await client.query("COMMIT"); // Confirma la transacción
+    await transaction.commit(); // Confirma la transacción
 
     res.status(201).json({
-      id_lista: result.rows[0].id_lista,
-      nombre_lista,
-      fecha_creacion: result.rows[0].fecha_creacion,
-      estado_seguridad: result.rows[0].estado_seguridad,
+      id_lista: nuevaLista.id_lista,
+      nombre_lista: nuevaLista.nombre_lista,
+      fecha_creacion: nuevaLista.fecha_creacion,
+      estado_seguridad: nuevaLista.estado_seguridad,
     });
   } catch (err) {
-    await client.query("ROLLBACK"); // Si algo falla, deshace la transacción
+    await transaction.rollback(); // Si algo falla, deshace la transacción
     console.error("Error al crear la lista:", err);
     res.status(500).json({ error: "Error interno del servidor" });
-  } finally {
-    client.release(); // Libera el cliente
   }
 };
+
+const updateListName = async (req, res) => {
+  const { id_lista } = req.params;
+  const { nombre_lista } = req.body;
+
+  try {
+      const list = await Listas.findOne({ where: { id_lista } });
+
+      if (!list) {
+          return res.status(404).json({ message: "Lista no encontrada." });
+      }
+
+      list.nombre_lista = nombre_lista;
+      await list.save();
+
+      res.status(200).json({ message: "Nombre de la lista actualizado correctamente." });
+  } catch (error) {
+      console.error("Error al actualizar la lista:", error);
+      res.status(500).json({ message: "Error al actualizar la lista." });
+  }
+};
+
+const getListsByUser = async (req, res) => {
+  const { id_usuario } = req.params;
+  try {
+    console.log("Buscando listas para el usuario:", id_usuario);
+    const listas = await Lista.findAll({ where: { id_usuario } });
+    console.log("Listas encontradas:", listas);
+
+    if (listas.length === 0) {
+      return res.status(404).json({ message: "No hay ninguna lista creada aún.", productos: [] });
+    }
+
+    res.json(listas);
+  } catch (error) {
+    console.error("Error al obtener listas:", error);
+    res.status(500).json({ message: "Error al obtener las listas." });
+  }
+};
+
 
 module.exports = {
   createList,
@@ -308,4 +335,6 @@ module.exports = {
   removeList,
   getAllLists,
   generateList,
+  updateListName,
+  getListsByUser,
 };

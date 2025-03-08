@@ -5,6 +5,8 @@ const swaggerSpec = require("./swaggerConfig");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
+const { connectDB, sequelize } = require("./config/db"); // Importa la conexión a la BD
+
 require("./models/associations"); // Asegura que todas las relaciones estén definidas
 
 const app = express();
@@ -39,17 +41,10 @@ const salesRoutes = require("./routes/sales.routes");
 const listsRoutes = require("./routes/lists.routes");
 const authRoutes = require("./routes/auth.routes");
 const profileRoutes = require("./routes/profile.routes");
+const listProductsRoutes = require("./routes/listProducts.routes");
+const rolesRoutes = require("./routes/roles.routes");
+const statesRoutes = require("./routes/states.routes");
 
-const { updateStatistics } = require("./controllers/sales.controller");
-
-app.use("/api/sales", async (req, res, next) => {
-  if (req.method === "POST" || req.method === "PUT") {
-    console.log("Se ha realizado una venta, actualizando estadísticas...");
-
-    await updateStatistics();
-  }
-  next();
-});
 
 // Rutas de la API
 app.use("/api", routes);
@@ -61,9 +56,23 @@ app.use("/api/sales", salesRoutes);
 app.use("/api/lists", listsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/listProducts", listProductsRoutes);
+app.use("/api/roles", rolesRoutes);
+app.use("/api/states", statesRoutes); 
 
-// Servidor escuchando
-app.listen(PORT, () => {
-  console.log(`Servidor escuchando en http://localhost:${PORT}`);
-  console.log(`Documentación disponible en http://localhost:${PORT}/api-docs`);
-});
+// 🚀 Función para iniciar el servidor después de conectar la BD
+const startServer = async () => {
+  try {
+    await connectDB(); // Conectar a la base de datos
+    await sequelize.sync({ force: false }); // Sincronizar modelos sin borrar datos
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+      console.log(`📑 Documentación en http://localhost:${PORT}/api-docs`);
+    });
+  } catch (error) {
+    console.error("❌ Error al iniciar el servidor:", error);
+  }
+};
+
+startServer(); // Ejecutar la función de inicio

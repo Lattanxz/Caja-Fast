@@ -1,16 +1,15 @@
-const pool = require("../config/db");
+const {MetodoPago} = require("../models/MetodoPago");
 
 const getAllPaymentMethods = async (req, res) => {
-  const query = "SELECT * FROM Metodo_Pago;";
   try {
-    const result = await pool.query(query);
-    res.status(200).json(result.rows);
+    const paymentMethods = await MetodoPago.findAll();
+    res.status(200).json(paymentMethods);
   } catch (error) {
-    console.error(error); // Esto ayuda a ver detalles del error en la consola
+    console.error(error);
     res.status(500).json({ mensaje: "Error al obtener los métodos de pago" });
   }
 };
 
 module.exports = {
-  getAllPaymentMethods,
+  getAllPaymentMethods,  // Asegúrate de exportar la función
 };

@@ -8,18 +8,28 @@ const Productos = sequelize.define(
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
-    },
+    }, 
     nombre_producto: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(100), // Máximo 100 caracteres
       allowNull: false,
+      validate: {
+        len: [3, 100], // Entre 3 y 100 caracteres
+      },
+    },
+    descripcion_producto: {
+      type: DataTypes.STRING(255), // Máximo 255 caracteres
+      allowNull: false,
+      validate: {
+        len: [10, 255], // Entre 10 y 255 caracteres
+      },
     },
     precio_producto: {
       type: DataTypes.FLOAT,
       allowNull: false,
-    },
-    descripcion_producto: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      validate: {
+        min: 0, // Evita valores negativos
+        isFloat: true, // Asegura que sea un número decimal
+      },
     },
   },
   {

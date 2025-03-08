@@ -1,51 +1,56 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/db"); // Importa la configuración de la base de datos
+const { sequelize } = require("../config/db");
 
 const Cajas = sequelize.define(
   "Cajas",
   {
     id_caja: {
       type: DataTypes.INTEGER,
-      primaryKey: true, // Clave primaria
-      autoIncrement: true, // Auto incremento
+      primaryKey: true,
+      autoIncrement: true,
     },
     id_usuario: {
       type: DataTypes.INTEGER,
-      allowNull: false, // Obligatorio
+      allowNull: false,
       references: {
-        model: "usuarios", // Relación con la tabla usuarios
-        key: "id_usuario", // Clave primaria de usuarios
+        model: "usuarios",
+        key: "id_usuario",
       },
     },
     nombre_caja: {
-      type: DataTypes.STRING(100), // Define el tipo y longitud
-      allowNull: false, // No puede ser nulo
+      type: DataTypes.STRING(100),
+      allowNull: false,
       validate: {
-        len: [3, 100], // Validación de longitud
+        len: [3, 100],
       },
     },
     descripcion_caja: {
-      type: DataTypes.TEXT, // Descripción opcional
+      type: DataTypes.STRING,
       allowNull: true,
     },
     fecha_apertura: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW, // Fecha por defecto como actual
+      defaultValue: DataTypes.NOW,
     },
     fecha_cierre: {
       type: DataTypes.DATE,
       allowNull: true,
     },
-    estado: {
+    eliminada: {
       type: DataTypes.BOOLEAN,
-      allowNull: false, // No puede ser nulo
-      defaultValue: true, // Valor por defecto
+      allowNull: false,
+      defaultValue: false,
+    },
+    estado: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: "abierto",
     },
   },
   {
-    tableName: "cajas", // Nombre de la tabla en la base de datos
-    timestamps: false, // Usa tus propios campos de fecha
+    tableName: "cajas",
+    timestamps: false,
   }
 );
 

@@ -11,7 +11,11 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
+    "@mui/icons-material": "^6.4.6",
+    "@mui/material": "^6.4.6",
+    "@mui/x-data-grid": "^7.27.2",
     "@szhsin/react-menu": "^4.2.3",
+    "@tanstack/react-table": "^8.21.2",
     "axios": "^1.7.9",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.456.0",
@@ -19,7 +23,8 @@
     "react-dom": "^18.3.1",
     "react-modal": "^3.16.1",
     "react-router-dom": "^7.0.1",
-    "react-toastify": "^10.0.6"
+    "recharts": "^2.15.1",
+    "sonner": "^2.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
@@ -27,6 +32,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/react-modal": "^3.16.3",
+    "@types/react-toastify": "^4.0.2",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.15.0",
