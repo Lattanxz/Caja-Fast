@@ -3,6 +3,8 @@ import axios from "axios";
 import { Pencil, Trash, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import Navbar from "./Navbar";
 
 interface Product {
     id_producto: number;
@@ -14,12 +16,15 @@ interface Product {
 
 const ProductsPage = () => {
   const [productos, setProductos] = useState<Product[]>([]);
+  const { isLoggedIn, userRole } = useAuth();
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [precio, setPrecio] = useState<number | "">("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");   
+  const [showForm, setShowForm] = useState(false); // Estado para mostrar el formulario
+  
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token"); // Asegúrate de obtener el token
@@ -136,80 +141,110 @@ const ProductsPage = () => {
   };
 
   return (
-      <div className="container mx-auto p-8">
-        <button onClick={() => navigate("/boxes")} className="bg-blue-500 text-white p-2 rounded mb-4">
-            Volver
-        </button>
-        <h1 className="text-2xl font-bold mb-4">Gestión de Productos</h1>
-        {error && <p className="text-red-500">{error}</p>}
-        {/* El resto del formulario y la tabla aquí */}
+    <div className="min-h-screen bg-gray-50">
+      <Navbar isLoggedIn={isLoggedIn} userRole={userRole ?? undefined} />
 
-      <div className="mb-6 flex gap-4">
-        <input
-          type="text"
-          placeholder="Nombre"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-        <input
-          type="text"
-          placeholder="Descripción"
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          className="border p-2 rounded w-full"
-        />
-        <input
-          type="number"
-          placeholder="Precio"
-          value={precio}
-          onChange={(e) => setPrecio(e.target.value === "" ? "" : parseFloat(e.target.value))}
-          className="border p-2 rounded w-full"
-        />
-        <button onClick={selectedProduct ? handleEditProduct : handleAddProduct} className="bg-green-500 text-white p-2 rounded">
-          {selectedProduct ? "Guardar" : <Plus />}
-        </button>
-      </div>
-      <table className="w-full border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">Nombre</th>
-            <th className="border p-2">Descripción</th>
-            <th className="border p-2">Precio</th>
-            <th className="border p-2">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan={4} className="text-center p-4">Cargando productos...</td>
-            </tr>
-          ) : productos.length === 0 ? (
-            <tr>
-              <td colSpan={4} className="text-center p-4">No hay productos disponibles.</td>
-            </tr>
-          ) : (
-            productos.map((product) => (
-              <tr key={product.id_producto} className="border">
-                <td className="border p-2">{product.nombre_producto}</td>
-                <td className="border p-2">{product.descripcion_producto}</td>
-                <td className="border p-2">${product.precio_producto}</td>
-                <td className="border p-2 flex gap-2">
-                  <button onClick={() => { setSelectedProduct(product); 
-                    setNombre(product.nombre_producto); 
-                    setDescripcion(product.descripcion_producto); 
-                    setPrecio(product.precio_producto); }} className="bg-yellow-500 text-white p-1 rounded">
-                    <Pencil />
-                  </button>
-                  <button onClick={() => handleDeleteProduct(product.id_producto)} className="bg-red-500 text-white p-1 rounded">
-                    <Trash />
-                  </button>
-                </td>
+      {/* Encabezado de la página */}
+      <header className="bg-black py-4 w-full">
+        <div className="container px-12 mx-auto text-sm text-black">
+          <h1 className="text-white text-2xl font-bold">PRODUCTOS EXISTENTES</h1>
+        </div>
+      </header>
+
+      {/* Contenedor principal centrado */}
+      <div className="max-w-5xl mx-auto bg-white shadow-md rounded-lg p-6 border mt-4">
+        <div className="flex justify-between items-center w-full mb-4">
+          <button onClick={() => navigate("/boxes")} className="bg-orange-500 text-white py-2 px-4 rounded">
+            Volver
+          </button>
+          <h2 className="text-xl font-bold flex-grow text-center">Gestión de Productos</h2>
+
+          {/* Botón Agregar Producto al lado derecho */}
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-blue-500 text-white p-2 rounded"
+          >
+            <Plus />
+          </button>
+        </div>
+
+        {/* Mostrar formulario solo cuando showForm es true */}
+        {showForm && (
+          <div className="mb-6 flex flex-col gap-4">
+            <input
+              type="text"
+              placeholder="Nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              className="border p-2 rounded w-full"
+            />
+            <input
+              type="text"
+              placeholder="Descripción"
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              className="border p-2 rounded w-full"
+            />
+            <input
+              type="number"
+              placeholder="Precio"
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value === "" ? "" : parseFloat(e.target.value))}
+              className="border p-2 rounded w-full"
+            />
+            <button onClick={selectedProduct ? handleEditProduct : handleAddProduct} className="bg-green-500 text-white py-2 rounded">
+              {selectedProduct ? "Guardar" : "Agregar Producto"}
+            </button>
+          </div>
+        )}
+
+        {/* Tabla de productos */}
+        <div className="overflow-y-auto max-h-[400px]">
+          <table className="w-full border-collapse border border-gray-300 mt-4">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border p-2">Nombre</th>
+                <th className="border p-2">Descripción</th>
+                <th className="border p-2">Precio</th>
+                <th className="border p-2">Acciones</th>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="text-center p-4">Cargando productos...</td>
+                </tr>
+              ) : productos.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-center p-4">No hay productos disponibles.</td>
+                </tr>
+              ) : (
+                productos.map((product) => (
+                  <tr key={product.id_producto} className="border">
+                    <td className="border p-2">{product.nombre_producto}</td>
+                    <td className="border p-2">{product.descripcion_producto}</td>
+                    <td className="border p-2">${product.precio_producto}</td>
+                    <td className="border p-2 flex gap-2">
+                      <button onClick={() => { 
+                        setSelectedProduct(product); 
+                        setNombre(product.nombre_producto); 
+                        setDescripcion(product.descripcion_producto); 
+                        setPrecio(product.precio_producto); 
+                        setShowForm(true); // Mostrar el formulario para editar
+                      }} className="bg-yellow-500 text-white p-2 rounded">
+                        <Pencil />
+                      </button>
+                      <button onClick={() => handleDeleteProduct(product.id_producto)} className="bg-red-500 text-white p-2 rounded">
+                        <Trash />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

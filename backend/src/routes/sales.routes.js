@@ -1,5 +1,5 @@
 const express = require("express");
-const { addProductToSale, getSalesByCaja, updateSale, deleteSale  } = require("../controllers/sales.controller");
+const { addProductToSale, getSalesByCaja, updateSale, deleteSale, getStatistics, getRevenueByDate, getTopProducts,  } = require("../controllers/sales.controller");
 const router = express.Router();
 /**
  * @swagger
@@ -51,11 +51,18 @@ const router = express.Router();
 
 router.post("/addProduct", addProductToSale);
 
+router.get("/statistics", getStatistics);
+
+router.get("/statisticsByDate", getRevenueByDate);
+
+router.get("/statisticsByProducts",  getTopProducts);
+
 
 router.get("/:id_caja", getSalesByCaja);
 
 router.put("/update/:id_venta", updateSale); // Endpoint para actualizar
 
 router.delete("/delete/:id_venta", deleteSale); // Endpoint para eliminar
+
 
 module.exports = router;

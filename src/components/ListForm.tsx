@@ -183,127 +183,148 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-       <Navbar isLoggedIn={isLoggedIn} userRole={userRole ?? undefined} />
-       <header className="bg-black py-4">
-        <div className="container px-12 mx-auto text-sm text-black">
-            <div className="flex justify-between items-center">
-              <h1 className="text-center text-white text-2xl font-bold text-black">
-                Lista de productos
-              </h1>
+          <div className="min-h-screen bg-gray-50">
+          <div className="w-full">
+            <Navbar isLoggedIn={isLoggedIn} userRole={userRole ?? undefined} />
+          </div>
+          <header className="bg-black py-4 w-full">
+            <div className="container px-12 mx-auto text-sm text-black">
+              <div className="flex justify-between items-center">
+                <h1 className="text-center text-white text-2xl font-bold">
+                  LISTA DE PRODUCTOS
+                </h1>
+              </div>
             </div>
-          </div>
-        </header>
-
-        <h2 className="text-black text-2xl font-bold text-black pt-4 pb-4 pl-4">
-                Listas existentes
-        </h2>
-    <button
-      className="bg-orange-500 text-white p-2 rounded mb-4 mr-4"
-      onClick={() => navigate("/boxes")}
-    >
-      Volver
-    </button>
-
-    <button
-      className="bg-black text-white p-2 rounded mb-4"
-      onClick={() => setShowForm(true)}
-    >
-      Agregar Lista
-    </button>
-
-      {showForm && (
-        <div className="border p-4 rounded shadow-md mb-4">
-          <h2 className="text-lg font-semibold mb-2">Crear Nueva Lista</h2>
-          <input
-            type="text"
-            placeholder="Nombre de la lista"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            className="border p-2 w-full rounded mb-2"
-          />
-          <select
-            className="border p-2 w-full rounded mb-2"
-            onChange={(e) => handleProductSelection(parseInt(e.target.value))}
-          >
-            <option value="">Selecciona un producto</option>
-            {allProducts.filter(p => !productos.some(pr => pr.id_producto === p.id_producto)).map(producto => (
-              <option key={producto.id_producto} value={producto.id_producto}>
-                {producto.nombre_producto}
-              </option>
-            ))}
-          </select>
-          <ul className="list-disc pl-5">
-            {productos.map(producto => (
-              <li key={producto.id_producto} className="flex justify-between items-center border p-2 rounded ">
-                {producto.nombre_producto}
-                <button className="text-red-500" onClick={() => handleRemoveProduct(producto.id_producto)}>X</button>
-              </li>
-            ))}
-          </ul>
-          {error && <p className="text-red-500">{error}</p>}
-          <div className="flex gap-2 mt-2">
-            <button
-              className="bg-blue-500 text-white p-2 rounded"
-              onClick={handleSave}
-              disabled={loading}
-            >
-              {loading ? "Guardando..." : "Guardar Lista"}
-            </button>
-            <button
-              className="bg-gray-500 text-white p-2 rounded"
-              onClick={() => setShowForm(false)}
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-4 border-2 rounded p-4 border-orange-500"> 
-        {lists.map((lista) => (
-          <div key={lista.id_lista} className="border p-4 rounded shadow-md border-black" >
-            <div className="flex justify-between items-center mb-2 ">
-              <h2 className="text-lg font-semibold">{lista.nombre_lista}</h2>
-              <div className="flex gap-2">
-                <button className="bg-red-500 text-white p-1 rounded" onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(lista.id_lista);
-                }}>Eliminar</button>
-               <button
-                  className="bg-orange-500 text-white p-1 rounded"
-                  onClick={() => setShowProductSelectForList(lista.id_lista)}
+          </header>
+          <div className="flex flex-col items-center w-full pt-6">
+          <div className="w-[1000px] max-w-full border-2 rounded p-4">
+            {/* Contenedor flex para título centrado y botones alineados */}
+            <div className="flex justify-between items-center w-full mb-4">
+              {/* Botón Volver alineado a la izquierda */}
+              <div className="flex justify-start">
+                <button
+                  className="bg-orange-500 text-white p-2 rounded"
+                  onClick={() => navigate("/boxes")}
                 >
-                  Agregar Producto
+                  Volver
+                </button>
+              </div>
+
+              {/* Título centrado */}
+              <h2 className="text-black text-2xl font-bold flex-grow text-center">
+                Listas existentes
+              </h2>
+
+              {/* Botón Agregar Lista alineado a la derecha */}
+              <div className="flex justify-end">
+                <button
+                  className="bg-black text-white p-2 rounded"
+                  onClick={() => setShowForm(true)}
+                >
+                  Agregar Lista
                 </button>
               </div>
             </div>
-            {showProductSelectForList === lista.id_lista && (
-              <select
-                className="border p-2 w-full rounded mb-2"
-                onChange={(e) => handleProductSelectionForList(lista.id_lista, parseInt(e.target.value))}
-              >
-                <option value="">Selecciona un producto</option>
-                {allProducts.filter(p => !lista.productos.some(pr => pr.id_producto === p.id_producto)).map(producto => (
-                  <option key={producto.id_producto} value={producto.id_producto}>
-                    {producto.nombre_producto}
-                  </option>
-                ))}
-              </select>
-            )}
-            <ul className="list-disc pl-5">
-              {lista.productos.map((producto) => (
-                <li
-                  key={producto.id_producto}
-                  className="flex justify-between items-center border border-black p-2 rounded border-black mb-2"
-                >
-                  {producto.nombre_producto} 
-                  <button className="text-red-500" onClick={() => handleRemoveProductFromList(lista.id_lista, producto.id_producto)}>X</button>
-                </li>
-              ))}
-            </ul>
+
+              {showForm && (
+                <div className="border p-4 rounded shadow-md mb-4 border-black">
+                  <h2 className="text-lg font-semibold mb-2">Crear Nueva Lista</h2>
+                  <input
+                    type="text"
+                    placeholder="Nombre de la lista"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    className="border p-2 w-full rounded mb-2 border-black"
+                  />
+                  <select
+                    className="border p-2 w-full rounded mb-2 border-black"
+                    onChange={(e) => handleProductSelection(parseInt(e.target.value))}
+                  >
+                    <option value="">Selecciona un producto</option>
+                    {allProducts
+                      .filter((p) => !productos.some((pr) => pr.id_producto === p.id_producto))
+                      .map((producto) => (
+                        <option key={producto.id_producto} value={producto.id_producto}>
+                          {producto.nombre_producto}
+                        </option>
+                      ))}
+                  </select>
+                  <ul className="list-disc pl-5">
+                    {productos.map((producto) => (
+                      <li key={producto.id_producto} className="flex justify-between items-center border p-2 rounded">
+                        {producto.nombre_producto}
+                        <button className="text-red-500" onClick={() => handleRemoveProduct(producto.id_producto)}>
+                          X
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {error && <p className="text-red-500">{error}</p>}
+                  <div className="flex gap-2 mt-2">
+                    <button className="bg-orange-500 text-white p-2 rounded" onClick={handleSave} disabled={loading}>
+                      {loading ? "Guardando..." : "Guardar Lista"}
+                    </button>
+                    <button className="bg-red-500 text-white p-2 rounded" onClick={() => setShowForm(false)}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+          <div className="space-y-4 h-[650px] overflow-y-auto p-4 border rounded">
+            {lists.map((lista) => (
+              <div key={lista.id_lista} className="border p-4 rounded shadow-md border-black">
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-lg font-semibold">{lista.nombre_lista}</h2>
+                  <div className="flex gap-2">
+                    <button
+                      className="bg-red-500 text-white p-1 rounded"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(lista.id_lista);
+                      }}
+                    >
+                      Eliminar
+                    </button>
+                    <button
+                      className="bg-orange-500 text-white p-1 rounded"
+                      onClick={() => setShowProductSelectForList(lista.id_lista)}
+                    >
+                      Agregar Producto
+                    </button>
+                  </div>
+                </div>
+                {showProductSelectForList === lista.id_lista && (
+                  <select
+                    className="border p-2 w-full rounded mb-2 "
+                    onChange={(e) => handleProductSelectionForList(lista.id_lista, parseInt(e.target.value))}
+                  >
+                    <option value="">Selecciona un producto</option>
+                    {allProducts
+                      .filter((p) => !lista.productos.some((pr) => pr.id_producto === p.id_producto))
+                      .map((producto) => (
+                        <option key={producto.id_producto} value={producto.id_producto}>
+                          {producto.nombre_producto}
+                        </option>
+                      ))}
+                  </select>
+                )}
+                <ul className="list-disc pl-5">
+                  {lista.productos.map((producto) => (
+                    <li key={producto.id_producto} className="flex justify-between items-center border p-2 rounded border-gray-300 mb-2">
+                      {producto.nombre_producto}
+                      <button
+                        className="text-red-500"
+                        onClick={() => handleRemoveProductFromList(lista.id_lista, producto.id_producto)}
+                      >
+                        X
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );

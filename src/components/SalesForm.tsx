@@ -7,6 +7,8 @@ import { Pencil, X } from "lucide-react"
 import ModalEditSale from "./ModalEditSale";
 import ChartsDashboard from "./ChartsDashboard";
 import {SalesData} from "./ChartsDashboard";
+import Navbar from "./Navbar";
+import { useAuth } from "../context/AuthContext";
 
 interface Sale {
   id_venta: number;
@@ -53,6 +55,7 @@ const SalesFormContent = ({ id_caja, id_lista }: SalesFormProps) => {
   const [nombreCaja, setNombreCaja] = useState<string>(''); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+   const { isLoggedIn, userRole } = useAuth();
 
   const navigate = useNavigate();
 
@@ -286,118 +289,132 @@ const handleAddSale = async () => {
   });
 
   return (
-    <>
-      <div className="flex flex-col justify-center items-center min-h-screen space-y-8">
-        {/* Contenedor de ventas */}
-        <div className="p-4 border rounded-xl shadow-lg bg-black text-orange-300 max-w-[1000px] w-full">
-          <div className="flex justify-between mb-4">
-            <button onClick={() => navigate("/boxes")} className="bg-orange-500 text-black p-2 rounded">← Volver</button>
-            <button className="bg-orange-500 text-black p-2 rounded">Gestionar Lista Productos</button>
-            <button className="bg-orange-500 text-black p-2 rounded" onClick={handleCloseBox}>Cerrar Caja</button>
-          </div>
-  
-          <div className="overflow-y-auto max-h-[400px]">
-            <table className="w-full border-collapse text-center">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <th key={header.id} className="border p-2">{flexRender(header.column.columnDef.header, header.getContext())}</th>
-                    ))}
-                    <th className="border p-2">Acciones</th>
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {sales.length > 0 ? (
-                  table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="border">
-                      {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="border p-2">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                      ))}
-                      <td className="border p-2 flex justify-center space-x-2">
-                        <button onClick={() => handleEdit(row.original)}>
-                          <Pencil className="text-orange-500 cursor-pointer" />
-                        </button>
-                        <button onClick={() => handleDelete(row.original.id_venta)}>
-                          <X className="text-red-500 cursor-pointer" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={table.getHeaderGroups()[0]?.headers.length + 1 || 1} className="text-center py-4">No hay ventas registradas</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+        <div className="w-full">
+          <Navbar isLoggedIn={isLoggedIn} userRole={userRole ?? undefined} />
         </div>
-  
-        {/* Formulario de agregar venta */}
-        <div className="p-4 border rounded-xl shadow-lg bg-black text-orange-300 max-w-[1000px] w-full">
-          <div className="flex justify-between items-center">
-            {/* Selección de producto, cantidad, método de pago y botón */}
-            <select
-              className="bg-orange-500 p-2 rounded text-black"
-              value={selectedProduct}
-              onChange={(e) => {
-                const productId = e.target.value;
-                setSelectedProduct(productId);
-                const selectedProd = productos.find(prod => prod.id_producto === parseInt(productId));
-                setPrecioProducto(selectedProd?.precio_producto || 0);
-              }}
-            >
-              <option>Seleccionar Producto</option>
-              {productos.map((producto) => (
-                <option key={producto.id_producto} value={producto.id_producto}>{producto.nombre_producto}</option>
-              ))}
-            </select>
-            <input
-              type="number"
-              className="bg-orange-500 p-2 rounded text-black"
-              placeholder="Cantidad"
-              value={cantidad}
-              onChange={(e) => setCantidad(parseInt(e.target.value))}
-            />
-            <select
-              className="bg-orange-500 p-2 rounded text-black"
-              value={selectedMetodoPago ?? ""}
-              onChange={(e) => setSelectedMetodoPago(parseInt(e.target.value))}
-            >
-              <option>Seleccionar Método de Pago</option>
-              {metodosPago.map((metodo) => (
-                <option key={metodo.id_metodo_pago} value={metodo.id_metodo_pago}>
-                  {metodo.tipo_metodo_pago}
-                </option>
-              ))}
-            </select>
-            <button className="bg-orange-500 p-2 rounded" onClick={handleAddSale}>Agregar</button>
-          </div>
-        </div>
-  
-        {/* Muestra el total de todas las ventas */}
-        <div className="p-4 border rounded-xl shadow-lg bg-black text-orange-300 max-w-[1000px] w-full mt-4">
-          <h3 className="text-xl font-bold">Total de la venta: ${calcularTotal().toFixed(2)}</h3>
-        </div>
-        
-        <ChartsDashboard sales={salesData} metodoPago={paymentPercentages} />
 
-      </div>
-      {isModalOpen && selectedSale && (
-        <ModalEditSale
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          sale={selectedSale}
-          productos={productos}
-          metodosPago={metodosPago}
-          onSave={handleSaveSale}
-        />
-      )}
-    </>
+        <header className="bg-black py-4 w-full">
+          <div className="container px-12 mx-auto text-sm text-black">
+            <div className="flex justify-between items-center">
+              <h1 className="text-center text-white text-2xl font-bold">
+                VENTAS
+              </h1>
+            </div>
+          </div>
+        </header>
+
+        <div className="flex flex-col justify-center items-center min-h-screen space-y-8">
+          {/* Contenedor de ventas */}
+          <div className="p-4 border rounded-xl shadow-lg bg-black text-orange-300 max-w-[1000px] w-full">
+            <div className="flex justify-between mb-4">
+              <button onClick={() => navigate("/boxes")} className="bg-orange-500 text-black p-2 rounded">← Volver</button>
+              <button className="bg-orange-500 text-black p-2 rounded">Gestionar Lista Productos</button>
+              <button className="bg-orange-500 text-black p-2 rounded" onClick={handleCloseBox}>Cerrar Caja</button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[400px]">
+              <table className="w-full border-collapse text-center">
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <th key={header.id} className="border p-2">{flexRender(header.column.columnDef.header, header.getContext())}</th>
+                      ))}
+                      <th className="border p-2">Acciones</th>
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {sales.length > 0 ? (
+                    table.getRowModel().rows.map((row) => (
+                      <tr key={row.id} className="border">
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id} className="border p-2">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                        ))}
+                        <td className="border p-2 flex justify-center space-x-2">
+                          <button onClick={() => handleEdit(row.original)}>
+                            <Pencil className="text-orange-500 cursor-pointer" />
+                          </button>
+                          <button onClick={() => handleDelete(row.original.id_venta)}>
+                            <X className="text-red-500 cursor-pointer" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={table.getHeaderGroups()[0]?.headers.length + 1 || 1} className="text-center py-4">No hay ventas registradas</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Formulario de agregar venta */}
+          <div className="p-4 border rounded-xl shadow-lg bg-black text-orange-300 max-w-[1000px] w-full">
+            <div className="flex justify-between items-center">
+              {/* Selección de producto, cantidad, método de pago y botón */}
+              <select
+                className="bg-orange-500 p-2 rounded text-black"
+                value={selectedProduct}
+                onChange={(e) => {
+                  const productId = e.target.value;
+                  setSelectedProduct(productId);
+                  const selectedProd = productos.find(prod => prod.id_producto === parseInt(productId));
+                  setPrecioProducto(selectedProd?.precio_producto || 0);
+                }}
+              >
+                <option>Seleccionar Producto</option>
+                {productos.map((producto) => (
+                  <option key={producto.id_producto} value={producto.id_producto}>{producto.nombre_producto}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                className="bg-orange-500 p-2 rounded text-black"
+                placeholder="Cantidad"
+                value={cantidad}
+                onChange={(e) => setCantidad(parseInt(e.target.value))}
+              />
+              <select
+                className="bg-orange-500 p-2 rounded text-black"
+                value={selectedMetodoPago ?? ""}
+                onChange={(e) => setSelectedMetodoPago(parseInt(e.target.value))}
+              >
+                <option>Seleccionar Método de Pago</option>
+                {metodosPago.map((metodo) => (
+                  <option key={metodo.id_metodo_pago} value={metodo.id_metodo_pago}>
+                    {metodo.tipo_metodo_pago}
+                  </option>
+                ))}
+              </select>
+              <button className="bg-orange-500 p-2 rounded" onClick={handleAddSale}>Agregar</button>
+            </div>
+          </div>
+
+          {/* Muestra el total de todas las ventas */}
+          <div className="p-4 border rounded-xl shadow-lg bg-black text-orange-300 max-w-[1000px] w-full mt-4">
+            <h3 className="text-xl font-bold">Total de la venta: ${calcularTotal().toFixed(2)}</h3>
+          </div>
+          
+          <ChartsDashboard sales={salesData} metodoPago={paymentPercentages} />
+
+        </div>
+
+        {isModalOpen && selectedSale && (
+          <ModalEditSale
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            sale={selectedSale}
+            productos={productos}
+            metodosPago={metodosPago}
+            onSave={handleSaveSale}
+          />
+        )}
+    </div>
   );
-  
-  };
+};
   
   export default SalesForm;

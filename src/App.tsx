@@ -13,6 +13,7 @@ import AdminForm from "./components/AdminForm";
 import SalesForm from "./components/SalesForm"; // Asegúrate de importar SalesForm
 import ProductsForm from "./components/ProductsForm";
 import ListForm from "./components/ListForm";
+import StatisticsForm from "./components/StatisticsForm";
 import { useState } from "react";
 import "./App.css";
 
@@ -84,7 +85,8 @@ function AppWithAuth() {
             onClose={handleClose}
           />
         }
-      />
+      />  
+      <Route path="/statistics" element={<StatisticsForm />} />
       <Route path="/users" element={<AdminForm />} />
       <Route path="/profile" element={<ProfileForm />} />
       <Route path="/sales/:id_caja" element={<SalesForm />} />

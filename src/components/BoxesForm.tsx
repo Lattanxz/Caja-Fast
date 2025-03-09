@@ -1,4 +1,4 @@
-import { PlusCircle, Trash2, Settings, Info } from "lucide-react";
+import { PlusCircle, Trash2, Settings, Info, ChartNoAxesCombined } from "lucide-react";
 import { useState, useEffect } from "react";
 import NavBar from "./Navbar";
 import ModalReusable from "./ModalReusable";
@@ -6,7 +6,6 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import {Producto} from "../types/index";
 import { useNavigate } from "react-router-dom";
-import {toast} from "sonner";
 
 const BoxesForm = () => {
   const { userId, isLoggedIn, userRole  } = useAuth(); // Obtener el userId del contexto
@@ -380,69 +379,64 @@ const navigate = useNavigate();
 /* Fin de los handles */
 
   return (
-<div className="flex flex-col min-h-screen bg-gray-100">
-      {/* Barra de navegación */}
-      <NavBar isLoggedIn={isLoggedIn} userRole={userRole ?? undefined} />
-      
-
-{/* Título principal */}
-<header className="bg-black py-4">
-  <div className="container px-12 mx-auto text-sm text-black">
-    <div className="flex justify-between items-center">
-      <h1 className="text-center text-white text-2xl font-bold">
-        GESTIÓN DE CAJAS (Usuario ID: {userId})
-      </h1>
-      <div className="flex space-x-4">
-        <button
-          className="bg-green-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-green-500"
-          onClick={() =>navigate("/product")}
-        >
-          GESTIONAR PRODUCTOS
-          <PlusCircle className="ml-2 w-5 h-5" />
-        </button>
-        <button
-          className="bg-blue-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-blue-500"
-          onClick={() => navigate("/list")}
-        >
-          GESTIONAR LISTAS
-          <PlusCircle className="ml-2 w-5 h-5" />
-        </button>
-        <button
-          className="bg-orange-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-orange-500"
-          onClick={() => {
-            fetchListas();
-            handleOpenModal("agregar");
-          }}
-        >
-          AGREGAR CAJA
-          <PlusCircle className="ml-2 w-5 h-5" />
-        </button>
+    <div className="flex flex-col min-h-screen bg-gray-100">
+    {/* Barra de navegación */}
+    <NavBar isLoggedIn={isLoggedIn} userRole={userRole ?? undefined} />
+    {/* Título principal */}  
+    <header className="bg-black py-4">
+      <div className="container px-12 mx-auto text-sm text-black">
+        <div className="flex justify-between items-center">
+          <h1 className="text-center text-white text-2xl font-bold">
+            GESTIÓN DE CAJAS (Usuario ID: {userId})
+          </h1>
+          <div className="flex space-x-4">
+          <button
+              className="bg-purple-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-purple-500"
+              onClick={() => navigate("/statistics")}
+            >
+              ESTADÍSTICAS
+              <ChartNoAxesCombined className="ml-2 w-5 h-5" />
+            </button>
+            <button
+              className="bg-green-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-green-500"
+              onClick={() =>navigate("/product")}
+            >
+              GESTIONAR PRODUCTOS
+              <PlusCircle className="ml-2 w-5 h-5" />
+            </button>
+            <button
+              className="bg-blue-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-blue-500"
+              onClick={() => navigate("/list")}
+            >
+              GESTIONAR LISTAS
+              <PlusCircle className="ml-2 w-5 h-5" />
+            </button>
+            <button
+              className="bg-orange-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-orange-500"
+              onClick={() => {
+                fetchListas();
+                handleOpenModal("agregar");
+              }}
+            >
+              AGREGAR CAJA
+              <PlusCircle className="ml-2 w-5 h-5" />
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</header>
+    </header>
 
 
       {/* Modal */}
       <ModalReusable
-  isOpen={isModalOpen}
-  onClose={handleCloseModal}
-  title={
-    modalContent === "agregar"
-      ? "GESTIÓN DE PRODUCTOS"
-      : modalContent === "cargarLista"
-      ? "Cargar Lista de Productos"
-      : modalContent === "crearLista"
-      ? "Crear Nueva Lista"
-      : modalContent === "gestionar"
-      ? `Gestionar Caja ${selectedCaja}`
-      : modalContent === "crearCaja"
-      ? "Crear Nueva Caja"
-      : modalContent === "gestionarListas"
-      ? "Gestionar Listas"
-      : "Modal"
-  }
->
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={
+          modalContent === "agregar"
+            ? "GESTIÓN DE PRODUCTOS"
+            : "Modal"
+        }
+      >
   
 {modalContent === "agregar" && (
     <div className="space-y-4 p-4">
@@ -512,7 +506,7 @@ const navigate = useNavigate();
             >
               <h3 className={`text-lg font-bold mb-2 ${caja.estado === "cerrada" ? "text-red-600" : ""}`}>{caja.nombre_caja}</h3>
               <p className="text-sm text-gray-600 mb-2">
-                FECHA DE CREACIÓN: {new Date(caja.fecha_apertura).toLocaleDateString()}
+                FECHA DE CREACIÓN: {caja.fecha_apertura}
               </p>
               {caja.estado === "cerrado" && (
                 <span className="text-red-500 font-bold mb-2 text-xl">CERRADA</span>
