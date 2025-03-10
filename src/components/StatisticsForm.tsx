@@ -6,10 +6,11 @@ import {
   PieChart, Pie, Cell
 } from "recharts";
 import Navbar from "./Navbar";
+import { useNavigate } from 'react-router-dom';
 
 const StatisticsForm: React.FC = () => {
   const { token, userId, isLoggedIn, userRole } = useAuth();
-
+  const navigate = useNavigate(); // Hook para manejar la navegación
   const [stats, setStats] = useState({
     totalVentas: 0,
     cajasCerradas: 0,
@@ -116,12 +117,15 @@ const StatisticsForm: React.FC = () => {
     fetchTopProducts();
     fetchPaymentMethods(); // 🔹 Llamamos a la nueva función aquí
   }, [userId, isLoggedIn]);
-  
-  
 
   useEffect(() => {
     console.log('Top products updated:', topProducts);  // Ahora deberías ver los productos actualizados
   }, [topProducts]);  // Este efecto se dispara solo cuando topProducts cambia
+
+
+  const handleBack = () => {
+    navigate('/boxes'); // Redirige al usuario a /boxes
+  };
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#A28BFE"];
 
@@ -132,15 +136,24 @@ const StatisticsForm: React.FC = () => {
       <Navbar isLoggedIn={isLoggedIn} userRole={userRole ?? undefined} />
     </div>
     <header className="bg-black py-4 w-full">
-      <div className="container px-12 mx-auto text-sm text-black">
-        <div className="flex justify-between items-center">
-          <h1 className="text-center text-white text-2xl font-bold">
-          📊 ESTADÍSTICAS
-          </h1>
+          <div className="container px-12 mx-auto text-sm text-black">
+            <div className="flex justify-between items-center">
+              <h1 className="text-center text-white text-2xl font-bold">
+              📊 ESTADÍSTICAS
+              </h1>
+              <div>
+          <button 
+            onClick={handleBack} 
+            className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+          >
+            Volver
+          </button>
         </div>
-      </div>
-    </header>
+            </div>
+          </div>
+        </header>
       <main className="flex-grow container mx-auto px-4 py-6">
+      
         {loading ? (
           <div className="text-center text-xl text-gray-600">Cargando...</div>
         ) : (

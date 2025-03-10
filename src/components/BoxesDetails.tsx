@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
 import Navbar from "../components/Navbar"; // Asegúrate de importar el Navbar
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from 'react-router-dom';
 
 interface ProductSold {
   nombre_producto: string;
@@ -26,6 +27,7 @@ interface BoxDetailsData {
 const COLORS = ["#4CAF50", "#8884d8", "#FFBB28", "#FF8042", "#82ca9d"];
 
 const BoxDetails: React.FC = () => {
+    const navigate = useNavigate(); // Hook para manejar la navegación
     const { userId, isLoggedIn, userRole } = useAuth(); // Obtener el userId del contexto
     const { id_caja } = useParams<{ id_caja: string }>();
     const idCaja = id_caja ? parseInt(id_caja) : null; // Convierte a número
@@ -52,6 +54,11 @@ const BoxDetails: React.FC = () => {
       fetchBoxDetails();
     }, [idCaja]);
   
+    const handleBack = () => {
+      navigate('/boxes'); // Redirige al usuario a /boxes
+    };
+  
+
     if (loading) return <div className="text-center text-xl text-gray-600">Cargando detalles...</div>;
   
     if (error) return <div className="text-center text-xl text-red-500">{error}</div>;
@@ -61,11 +68,26 @@ const BoxDetails: React.FC = () => {
         {/* Navbar */}
         <div className="w-full">
           <Navbar isLoggedIn={isLoggedIn} userRole={userRole ?? undefined} />
+          
         </div>
   
         {/* Header */}
-        <header className="bg-black py-4 w-full text-center">
-          <h1 className="text-white text-2xl font-bold">📊 ESTADÍSTICAS DE LA CAJA</h1>
+        <header className="bg-black py-4 w-full">
+          <div className="container px-12 mx-auto text-sm text-black">
+            <div className="flex justify-between items-center">
+              <h1 className="text-center text-white text-2xl font-bold ">
+              📊 ESTADÍSTICAS DE LA CAJA
+              </h1>
+              <div>
+              <button 
+                onClick={handleBack} 
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+              >
+                Volver
+              </button>
+            </div>
+            </div>
+          </div>
         </header>
   
         <main className="container mx-auto px-4 py-6">
