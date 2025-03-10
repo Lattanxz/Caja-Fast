@@ -10,6 +10,7 @@ const {
   deleteProductFromBox,
   createBox,
   getBoxById,
+  getBoxDetails,
 } = require("../controllers/boxes.controller");
 
 /**
@@ -63,7 +64,7 @@ const {
  *         description: Error interno del servidor
  */
 
-router.put("/:id", updateBox);
+router.put("/:id", updateBox);  
 
 /**
  * @swagger
@@ -370,5 +371,7 @@ router.delete("/:id_caja/products/:id_producto", deleteProductFromBox);
 router.post("/create", authenticateToken, createBox);
 
 router.get("/:id_caja", getBoxById);
+
+router.get("/getBoxDetails/:id_caja", getBoxDetails);
 
 module.exports = router;

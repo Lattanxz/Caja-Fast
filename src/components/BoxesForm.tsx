@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import {Producto} from "../types/index";
 import { useNavigate } from "react-router-dom";
+import BoxDetails from "./BoxesDetails";
 
 const BoxesForm = () => {
   const { userId, isLoggedIn, userRole  } = useAuth(); // Obtener el userId del contexto
@@ -38,7 +39,7 @@ const BoxesForm = () => {
   const [estadoCaja, setEstadoCaja] = useState(false); 
   const [cargando, setCargando] = useState(true);
   const [listaSeleccionada, setListaSeleccionada] = useState<string | "">("");
-
+  const [selectedBox, setSelectedBox] = useState<number | null>(null);
 
 /* Final de constantes y estados */
 
@@ -376,13 +377,18 @@ const navigate = useNavigate();
     }
   }
 };
+
+const handleViewDetails = (id_caja: number) => {
+  setSelectedBox(id_caja);
+};
 /* Fin de los handles */
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
+  <div className="flex flex-col min-h-screen bg-gray-100">
     {/* Barra de navegación */}
     <NavBar isLoggedIn={isLoggedIn} userRole={userRole ?? undefined} />
-    {/* Título principal */}  
+
+    {/* Título principal */}
     <header className="bg-black py-4">
       <div className="container px-12 mx-auto text-sm text-black">
         <div className="flex justify-between items-center">
@@ -390,7 +396,7 @@ const navigate = useNavigate();
             GESTIÓN DE CAJAS (Usuario ID: {userId})
           </h1>
           <div className="flex space-x-4">
-          <button
+            <button
               className="bg-purple-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-purple-500"
               onClick={() => navigate("/statistics")}
             >
@@ -399,7 +405,7 @@ const navigate = useNavigate();
             </button>
             <button
               className="bg-green-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-green-500"
-              onClick={() =>navigate("/product")}
+              onClick={() => navigate("/product")}
             >
               GESTIONAR PRODUCTOS
               <PlusCircle className="ml-2 w-5 h-5" />
@@ -426,73 +432,70 @@ const navigate = useNavigate();
       </div>
     </header>
 
-
-      {/* Modal */}
-      <ModalReusable
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        title={
-          modalContent === "agregar"
-            ? "GESTIÓN DE PRODUCTOS"
-            : "Modal"
-        }
-      >
-  
-{modalContent === "agregar" && (
-    <div className="space-y-4 p-4">
-      <p className="mb-6 text-center">ELIGE UNA LISTA DE PRODUCTOS PARA ABRIR LA CAJA</p>
-      {listasDeProductos.length > 0 ? (
-        <div>
-          <select
-            className="bg-orange-500 text-white w-full py-2 rounded-lg"
-            onChange={(e) => setListaSeleccionada(e.target.value)}
-          >
-            <option value="">Seleccionar lista</option>
-            {listasDeProductos.map((lista) => (
-              <option key={lista.id_lista} value={lista.id_lista}>
-                {lista.nombre_lista}
-              </option>
-            ))}
-          </select>
-          <div className="space-y-4 mt-4">
-            <input
-              type="text"
-              placeholder="Nombre de la caja"
-              value={nombreCaja}
-              onChange={(e) => setNombreCaja(e.target.value)}
-              className="border rounded-lg px-4 py-2 text-black w-full"
-            />
-            <input
-              type="date"
-              placeholder="Fecha de creación"
-              value={fechaCaja}
-              onChange={(e) => setFechaCaja(e.target.value)}
-              className="border rounded-lg px-4 py-2 text-black w-full"
-            />
-            <button
-              onClick={handleCrearCaja}
-              className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
-            >
-              Crear Caja
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center">
-          No hay listas disponibles, crea una
-          <button
-            className="bg-green-500 text-white w-full py-2 rounded hover:bg-green-600 mt-4"
-            onClick={() => handleOpenModal("crearLista")}
-          >
-            CREAR LISTA
-          </button>
+    {/* Modal */}
+    <ModalReusable
+      isOpen={isModalOpen}
+      onClose={handleCloseModal}
+      title={
+        modalContent === "agregar" ? "GESTIÓN DE PRODUCTOS" : "Modal"
+      }
+    >
+      {modalContent === "agregar" && (
+        <div className="space-y-4 p-4">
+          <p className="mb-6 text-center">ELIGE UNA LISTA DE PRODUCTOS PARA ABRIR LA CAJA</p>
+          {listasDeProductos.length > 0 ? (
+            <div>
+              <select
+                className="bg-orange-500 text-white w-full py-2 rounded-lg"
+                onChange={(e) => setListaSeleccionada(e.target.value)}
+              >
+                <option value="">Seleccionar lista</option>
+                {listasDeProductos.map((lista) => (
+                  <option key={lista.id_lista} value={lista.id_lista}>
+                    {lista.nombre_lista}
+                  </option>
+                ))}
+              </select>
+              <div className="space-y-4 mt-4">
+                <input
+                  type="text"
+                  placeholder="Nombre de la caja"
+                  value={nombreCaja}
+                  onChange={(e) => setNombreCaja(e.target.value)}
+                  className="border rounded-lg px-4 py-2 text-black w-full"
+                />
+                <input
+                  type="date"
+                  placeholder="Fecha de creación"
+                  value={fechaCaja}
+                  onChange={(e) => setFechaCaja(e.target.value)}
+                  className="border rounded-lg px-4 py-2 text-black w-full"
+                />
+                <button
+                  onClick={handleCrearCaja}
+                  className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
+                >
+                  Crear Caja
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              No hay listas disponibles, crea una
+              <button
+                className="bg-green-500 text-white w-full py-2 rounded hover:bg-green-600 mt-4"
+                onClick={() => handleOpenModal("crearLista")}
+              >
+                CREAR LISTA
+              </button>
+            </div>
+          )}
         </div>
       )}
-    </div>
-  )}
-  </ModalReusable>
+    </ModalReusable>
 
-  <main className="flex-grow container mx-auto px-4 py-6 flex flex-col items-center">
+    {/* Contenido Principal */}
+    <main className="flex-grow container mx-auto px-4 py-6 flex flex-col items-center">
       {cargando ? (
         <p className="text-lg font-bold text-gray-500">Cargando cajas...</p>
       ) : cajas.length === 0 ? (
@@ -504,7 +507,9 @@ const navigate = useNavigate();
               key={caja.id || `caja-${index}`}
               className={`bg-gray-200 border-2 p-4 rounded-lg shadow-lg flex flex-col items-center transition-all duration-300 ${caja.estado === "cerrada" ? "border-red-500 bg-red-100 opacity-75" : "border-orange-400"}`}
             >
-              <h3 className={`text-lg font-bold mb-2 ${caja.estado === "cerrada" ? "text-red-600" : ""}`}>{caja.nombre_caja}</h3>
+              <h3 className={`text-lg font-bold mb-2 ${caja.estado === "cerrada" ? "text-red-600" : ""}`}>
+                {caja.nombre_caja}
+              </h3>
               <p className="text-sm text-gray-600 mb-2">
                 FECHA DE CREACIÓN: {caja.fecha_apertura}
               </p>
@@ -514,7 +519,7 @@ const navigate = useNavigate();
               <div className="flex space-x-2 mb-4">
                 <button
                   className="bg-orange-400 text-black px-3 py-2 rounded-lg hover:bg-orange-500 flex items-center"
-                  onClick={() => console.log("Work in progress")}
+                  onClick={() => navigate(`/box-details/${caja.id_caja}`)}
                 >
                   <Info className="w-4 h-4 mr-2" />
                   VER DETALLES
@@ -532,11 +537,7 @@ const navigate = useNavigate();
               <button
                 className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center"
                 onClick={() => {
-                  if (
-                    window.confirm(
-                      `¿Estás seguro que deseas eliminar la caja "${caja.nombre_caja}"?`
-                    )
-                  ) {
+                  if (window.confirm(`¿Estás seguro que deseas eliminar la caja "${caja.nombre_caja}"?`)) {
                     handleDeleteCaja(caja.id_caja);
                     alert(`La caja "${caja.nombre_caja}" fue eliminada exitosamente.`);
                   }
@@ -551,8 +552,8 @@ const navigate = useNavigate();
       )}
     </main>
   </div>
-  );
-};
+);
+}
 export default BoxesForm;
 
 

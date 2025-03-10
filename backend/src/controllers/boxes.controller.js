@@ -2,6 +2,7 @@ const { sequelize } = require("../config/db");
 const Cajas = require("../models/cajas");
 const Producto = require("../models/productosGeneral");
 const Venta = require("../models/venta");
+const {MetodoPago} = require("../models/MetodoPago");
 const { Op } = require("sequelize");
 
 // 1. Obtener cajas para ponerla en la pagina
@@ -368,6 +369,71 @@ const getBoxById = async (req, res) => {
   }
 };
 
+const getBoxDetails = async (req, res) => {
+  const { id_caja } = req.params;
+  console.log("ID de la caja recibido:", id_caja);
+
+  try {
+    // Obtener la caja y sus ventas
+    const caja = await Cajas.findByPk(id_caja, {
+      include: [{ model: Venta, include: [MetodoPago] }],
+    });
+    
+    console.log("Caja con ventas:", JSON.stringify(caja, null, 2));
+    
+    if (!caja) {
+      return res.status(404).json({ message: "Caja no encontrada" });
+    }
+
+    // Calcular el total recaudado de las ventas de esta caja
+    if (!caja.Venta || !Array.isArray(caja.Venta)) {
+      return res.status(500).json({ error: "Las ventas de la caja no se encuentran disponibles." });
+    }
+    
+    const totalRecaudado = caja.Venta.reduce((acc, venta) => acc + (venta.precio_producto), 0);
+
+    // Agrupar los productos vendidos
+    const productosVendidos = caja.Venta.reduce((acc, venta) => {
+      const productoIndex = acc.findIndex(p => p.nombre_producto === venta.nombre_producto);
+      if (productoIndex > -1) {
+        acc[productoIndex].cantidad += venta.cantidad;
+      } else {
+        acc.push({ nombre_producto: venta.nombre_producto, cantidad: venta.cantidad });
+      }
+      return acc;
+    }, []);
+
+    // Agrupar los métodos de pago utilizados
+    const metodosPago = caja.Venta.reduce((acc, venta) => {
+      const metodoIndex = acc.findIndex(m => m.tipo_metodo_pago === venta.MetodoPago.tipo_metodo_pago);
+      if (metodoIndex > -1) {
+        acc[metodoIndex].monto += (venta.precio_producto);
+      } else {
+        acc.push({
+          tipo_metodo_pago: venta.MetodoPago.tipo_metodo_pago,
+          monto: (venta.precio_producto),
+        });
+      }
+      return acc;
+    }, []);
+
+    // Calcular porcentajes
+    const metodosPagoConPorcentaje = metodosPago.map(metodo => ({
+      tipo_metodo_pago: metodo.tipo_metodo_pago,
+      monto: metodo.monto,
+      porcentaje: parseFloat(((metodo.monto / totalRecaudado) * 100).toFixed(2))
+    }));
+
+    res.json({
+      totalRecaudado,
+      productosVendidos,
+      metodosPago: metodosPagoConPorcentaje,
+    });
+  } catch (error) {
+    console.error("Error al obtener los detalles de la caja:", error);
+    res.status(500).json({ error: "Error al obtener los detalles de la caja." });
+  }
+};
 
 module.exports = {
   getProductsFromBox,
@@ -378,4 +444,5 @@ module.exports = {
   deleteProductFromBox,
   createBox,
   getBoxById,
+  getBoxDetails,
 };

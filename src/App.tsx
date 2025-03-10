@@ -14,6 +14,7 @@ import SalesForm from "./components/SalesForm"; // Asegúrate de importar SalesF
 import ProductsForm from "./components/ProductsForm";
 import ListForm from "./components/ListForm";
 import StatisticsForm from "./components/StatisticsForm";
+import BoxDetails from "./components/BoxesDetails";
 import { useState } from "react";
 import "./App.css";
 
@@ -87,6 +88,7 @@ function AppWithAuth() {
         }
       />  
       <Route path="/statistics" element={<StatisticsForm />} />
+      <Route path="/box-details/:id_caja" element={<BoxDetails />} />
       <Route path="/users" element={<AdminForm />} />
       <Route path="/profile" element={<ProfileForm />} />
       <Route path="/sales/:id_caja" element={<SalesForm />} />
