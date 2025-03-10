@@ -393,15 +393,28 @@ const getBoxDetails = async (req, res) => {
     const totalRecaudado = caja.Venta.reduce((acc, venta) => acc + (venta.precio_producto), 0);
 
     // Agrupar los productos vendidos
-    const productosVendidos = caja.Venta.reduce((acc, venta) => {
-      const productoIndex = acc.findIndex(p => p.nombre_producto === venta.nombre_producto);
-      if (productoIndex > -1) {
-        acc[productoIndex].cantidad += venta.cantidad;
-      } else {
-        acc.push({ nombre_producto: venta.nombre_producto, cantidad: venta.cantidad });
-      }
-      return acc;
-    }, []);
+    const { productosVendidos, totalProductosVendidos } = caja.Venta.reduce(
+      (acc, venta) => {
+        // Agrupar productos por nombre
+        const productoIndex = acc.productosVendidos.findIndex(
+          (p) => p.nombre_producto === venta.nombre_producto
+        );
+        if (productoIndex > -1) {
+          acc.productosVendidos[productoIndex].cantidad += venta.cantidad;
+        } else {
+          acc.productosVendidos.push({
+            nombre_producto: venta.nombre_producto,
+            cantidad: venta.cantidad,
+          });
+        }
+
+        // Sumar la cantidad total de productos vendidos
+        acc.totalProductosVendidos += venta.cantidad;
+
+        return acc;
+      },
+      { productosVendidos: [], totalProductosVendidos: 0 } // Estado inicial
+    );
 
     // Agrupar los métodos de pago utilizados
     const metodosPago = caja.Venta.reduce((acc, venta) => {
@@ -427,6 +440,7 @@ const getBoxDetails = async (req, res) => {
     res.json({
       totalRecaudado,
       productosVendidos,
+      totalProductosVendidos,
       metodosPago: metodosPagoConPorcentaje,
     });
   } catch (error) {

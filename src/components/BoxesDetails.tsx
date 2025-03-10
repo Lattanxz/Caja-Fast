@@ -19,6 +19,7 @@ interface PaymentMethod {
 interface BoxDetailsData {
   totalRecaudado: number;
   productosVendidos: ProductSold[];
+  totalProductosVendidos: number;
   metodosPago: PaymentMethod[];
 }
 
@@ -81,7 +82,7 @@ const BoxDetails: React.FC = () => {
               <div className="bg-white p-4 shadow-md rounded-lg text-center">
                 <h3 className="text-lg font-semibold">Productos Vendidos</h3>
                 <p className="text-2xl font-bold text-purple-500">
-                  {boxDetails?.productosVendidos?.length ?? 0}
+                  {boxDetails?.totalProductosVendidos ?? 0}
                 </p>
               </div>
               <div className="bg-white p-4 shadow-md rounded-lg text-center">
