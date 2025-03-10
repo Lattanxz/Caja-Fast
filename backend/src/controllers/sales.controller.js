@@ -272,6 +272,69 @@ async function getTopProducts(req, res) {
   }
 }
 
+const getPaymentMethodUsage = async (req, res) => {
+  try {
+    const { id_usuario } = req.query; // Obtener el ID del usuario desde los parámetros de la consulta
+
+    // Obtener las cajas del usuario
+    const cajas = await Caja.findAll({
+      where: { id_usuario }, // Filtrar por usuario
+      attributes: ["id_caja"], // Solo necesitamos el ID de la caja
+      raw: true,
+    });
+
+    if (cajas.length === 0) {
+      return res.json({ message: "No hay cajas registradas para este usuario", data: [] });
+    }
+
+    // Obtener las ventas asociadas a las cajas del usuario
+    const ventas = await Venta.findAll({
+      where: {
+        id_caja: cajas.map(caja => caja.id_caja), // Filtrar por las cajas del usuario
+      },
+      attributes: [
+        "id_metodo_pago",
+        [sequelize.fn("COUNT", sequelize.col("id_metodo_pago")), "cantidadUsada"],
+      ],
+      group: ["id_metodo_pago"],
+      raw: true,
+    });
+
+    if (ventas.length === 0) {
+      return res.json({ message: "No hay ventas registradas para las cajas de este usuario", data: [] });
+    }
+
+    // Obtener el total de ventas del usuario
+    const totalVentas = ventas.reduce((acc, item) => acc + parseInt(item.cantidadUsada), 0);
+
+    // Obtener los nombres de los métodos de pago
+    const metodosPago = await MetodoPago.findAll({
+      attributes: ["id_metodo_pago", "tipo_metodo_pago"],
+      raw: true,
+    });
+
+    // Crear un objeto para mapear los IDs con sus nombres
+    const metodoPagoMap = metodosPago.reduce((acc, metodo) => {
+      acc[metodo.id_metodo_pago] = metodo.tipo_metodo_pago;
+      return acc;
+    }, {});
+
+    // Calcular los porcentajes
+    const resultado = ventas.map((item) => ({
+      id_metodo_pago: item.id_metodo_pago,
+      tipo_metodo_pago: metodoPagoMap[item.id_metodo_pago] || "Desconocido", // Corregido
+      cantidad_usada: item.cantidadUsada,
+      porcentaje: ((item.cantidadUsada / totalVentas) * 100).toFixed(2) + " %",
+    }));
+
+    res.json({ totalVentas, metodosPago: resultado });
+  } catch (error) {
+    console.error("Error al obtener el porcentaje de uso de los métodos de pago:", error);
+    res.status(500).json({ error: "Error al obtener los datos." });
+  }
+};
+
+
 
 
 
@@ -283,4 +346,5 @@ module.exports = {
   getStatistics,
   getRevenueByDate,
   getTopProducts,
+  getPaymentMethodUsage,
 };

@@ -1,5 +1,5 @@
 const express = require("express");
-const { addProductToSale, getSalesByCaja, updateSale, deleteSale, getStatistics, getRevenueByDate, getTopProducts,  } = require("../controllers/sales.controller");
+const { addProductToSale, getSalesByCaja, updateSale, deleteSale, getStatistics, getRevenueByDate, getTopProducts, getPaymentMethodUsage  } = require("../controllers/sales.controller");
 const router = express.Router();
 /**
  * @swagger
@@ -57,6 +57,7 @@ router.get("/statisticsByDate", getRevenueByDate);
 
 router.get("/statisticsByProducts",  getTopProducts);
 
+router.get("/statisticsPaymentMethodUsage", getPaymentMethodUsage);
 
 router.get("/:id_caja", getSalesByCaja);
 
