@@ -1,6 +1,9 @@
 const pool = require("../config/db");
 const Producto = require("../models/productosGeneral");
 const Lista = require("../models/lista");
+const ProductoLista = require("../models/productoLista");
+const Venta = require("../models/venta");
+const Caja = require("../models/cajas");
 
 // Obtener todos los productos
 const getAllProducts = async (req, res) => {
@@ -102,19 +105,55 @@ const deleteProduct = async (req, res) => {
   }
 
   try {
-    // Buscar el producto en la base de datos
-    const product = await Producto.findByPk(id_producto);
+    // Buscar si el producto está asociado a una lista
+    const productoLista = await ProductoLista.findOne({ where: { id_producto } });
+    const id_lista = productoLista?.id_lista;
 
-    if (!product) {
-      return res.status(404).json({ mensaje: "Producto no encontrado." });
+    // Si el producto no está en ninguna lista, se borra directamente
+    if (!id_lista) {
+      await Producto.destroy({ where: { id_producto } });
+      return res.status(200).json({
+        mensaje: "El producto fue eliminado completamente porque no estaba en ninguna lista.",
+      });
     }
 
-    // Eliminar el producto
-    await product.destroy();
+    // Verificar si el producto es el último en la lista
+    const countProductos = await ProductoLista.count({ where: { id_lista } });
+
+    if (countProductos === 1) {
+      // Si es el último producto de la lista, verificamos si la lista está asociada a una caja abierta
+      const countCajasAbiertas = await Venta.count({
+        where: { id_lista },
+        include: {
+          model: Caja,
+          where: { estado: "abierto" },
+          required: true,
+        },
+      });
+
+      if (countCajasAbiertas > 0) {
+        return res.status(400).json({
+          mensaje:
+            "No se puede eliminar el producto ni la lista porque la lista está asociada a una caja abierta.",
+        });
+      }
+
+      // Si no está en una caja abierta, eliminamos el producto y la lista
+      await Lista.destroy({ where: { id_lista } });
+      await Producto.destroy({ where: { id_producto } });
+
+      return res.status(200).json({
+        mensaje: "El producto y la lista fueron eliminados correctamente.",
+      });
+    }
+
+    // Si no es el último producto, solo eliminamos el producto de la lista
+    await ProductoLista.destroy({ where: { id_producto } });
 
     return res.status(200).json({
-      mensaje: "El producto fue eliminado correctamente.",
+      mensaje: "El producto fue eliminado de la lista correctamente.",
     });
+
   } catch (err) {
     console.error(err);
     return res.status(500).json({
@@ -122,6 +161,8 @@ const deleteProduct = async (req, res) => {
     });
   }
 };
+
+
 
 
 const addProductToBox = async (req, res) => {

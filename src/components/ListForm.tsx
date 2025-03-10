@@ -3,6 +3,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import { toast } from 'sonner';
 
 interface Product {
   id_producto: number;
@@ -33,31 +34,46 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
     const [showProductSelectForList, setShowProductSelectForList] = useState<number | null>(null);
     const navigate = useNavigate();
 
-  const fetchLists = async () => {
-    try {
-      const response = await axios.get<List[]>("http://localhost:3000/api/lists");
-      console.log("Datos obtenidos:", response.data);
-      console.log("User ID: ", userId);
-      setLists(response.data);
-    } catch (error) {
-      console.error("Error al obtener las listas:", error);
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const response = await axios.get<Product[]>("http://localhost:3000/api/products");
-      setAllProducts(response.data);
-    } catch (error) {
-      console.error("Error al obtener los productos:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchLists();
-    fetchProducts();
-  }, []);
-
+    const fetchLists = async () => {
+      try {
+        if (!userId || !token) return; // Evitar hacer la solicitud si no hay usuario o token
+  
+        const response = await axios.get<List[]>("http://localhost:3000/api/lists", {
+          headers: {
+            Authorization: `Bearer ${token}`, // Enviar el token en los headers
+          },
+          params: {
+            id_usuario: userId, // Enviar el userId en los parámetros
+          },
+        });
+  
+        console.log("Datos obtenidos:", response.data);
+        setLists(response.data);
+      } catch (error) {
+        console.error("Error al obtener las listas:", error);
+      }
+    };
+  
+    const fetchProducts = async () => {
+      try {
+        if (!token) return; // Evitar hacer la solicitud sin autenticación
+  
+        const response = await axios.get<Product[]>("http://localhost:3000/api/products", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+  
+        setAllProducts(response.data);
+      } catch (error) {
+        console.error("Error al obtener los productos:", error);
+      }
+    };
+  
+    useEffect(() => {
+      fetchLists();
+      fetchProducts();
+    }, [userId, token]); // Ejecutar cuando userId o token cambien
   const handleSave = async () => {
     if (!nombre) {
       setError("El nombre de la lista es obligatorio.");
@@ -119,14 +135,27 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
 
   const handleDelete = async (id_lista: number) => {
     try {
-      await axios.delete(`http://localhost:3000/api/lists/${id_lista}`);
-      setLists(lists.filter((list) => list.id_lista !== id_lista));
-      console.log(`Lista con ID ${id_lista} eliminada correctamente.`);
-    } catch (error) {
-      console.error("Error al eliminar la lista:", error);
+      const response = await axios.delete(`http://localhost:3000/api/lists/${id_lista}`);
+      
+      // Si la respuesta es exitosa, actualizamos la lista
+      if (response.status === 200) {
+        setLists(lists.filter((list) => list.id_lista !== id_lista));
+        console.log(`Lista con ID ${id_lista} eliminada correctamente.`);
+        toast.success('Lista eliminada correctamente');  // Notificación de éxito con Sonner
+      }
+    } catch (error: any) {
+      if (error.response && error.response.status === 400) {
+        // Si el error es debido a cajas abiertas, mostramos el mensaje de error
+        toast.error(error.response.data.message || 'No se puede eliminar la lista porque tiene cajas abiertas.');  // Notificación de error con Sonner
+      } else {
+        // Manejar otros errores genéricos
+        console.error("Error al eliminar la lista:", error);
+        toast.error('Hubo un error al intentar eliminar la lista.');  // Notificación de error con Sonner
+      }
     }
   };
-
+  
+  
   const handleProductSelection = (id: number) => {
     const product = allProducts.find(p => p.id_producto === id);
     if (product && !productos.some(p => p.id_producto === id)) {
@@ -270,60 +299,64 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
                   </div>
                 </div>
               )}
-          <div className="space-y-4 h-[650px] overflow-y-auto p-4 border rounded">
-            {lists.map((lista) => (
-              <div key={lista.id_lista} className="border p-4 rounded shadow-md border-black">
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-lg font-semibold">{lista.nombre_lista}</h2>
-                  <div className="flex gap-2">
-                    <button
-                      className="bg-red-500 text-white p-1 rounded"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(lista.id_lista);
-                      }}
-                    >
-                      Eliminar
-                    </button>
-                    <button
-                      className="bg-orange-500 text-white p-1 rounded"
-                      onClick={() => setShowProductSelectForList(lista.id_lista)}
-                    >
-                      Agregar Producto
-                    </button>
-                  </div>
+                <div className="space-y-4 h-[650px] overflow-y-auto p-4 border rounded">
+                  {lists.length === 0 ? (
+                    <p className="text-center text-gray-500 text-lg font-semibold">No hay listas para este usuario</p>
+                  ) : (
+                    lists.map((lista) => (
+                      <div key={lista.id_lista} className="border p-4 rounded shadow-md border-black">
+                        <div className="flex justify-between items-center mb-2">
+                          <h2 className="text-lg font-semibold">{lista.nombre_lista}</h2>
+                          <div className="flex gap-2">
+                            <button
+                              className="bg-red-500 text-white p-1 rounded"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(lista.id_lista);
+                              }}
+                            >
+                              Eliminar
+                            </button>
+                            <button
+                              className="bg-orange-500 text-white p-1 rounded"
+                              onClick={() => setShowProductSelectForList(lista.id_lista)}
+                            >
+                              Agregar Producto
+                            </button>
+                          </div>
+                        </div>
+                        {showProductSelectForList === lista.id_lista && (
+                          <select
+                            className="border p-2 w-full rounded mb-2"
+                            onChange={(e) => handleProductSelectionForList(lista.id_lista, parseInt(e.target.value))}
+                          >
+                            <option value="">Selecciona un producto</option>
+                            {allProducts
+                              .filter((p) => !lista.productos.some((pr) => pr.id_producto === p.id_producto))
+                              .map((producto) => (
+                                <option key={producto.id_producto} value={producto.id_producto}>
+                                  {producto.nombre_producto}
+                                </option>
+                              ))}
+                          </select>
+                        )}
+                        <ul className="list-disc pl-5">
+                          {lista.productos.map((producto) => (
+                            <li key={producto.id_producto} className="flex justify-between items-center border p-2 rounded border-gray-300 mb-2">
+                              {producto.nombre_producto}
+                              <button
+                                className="text-red-500"
+                                onClick={() => handleRemoveProductFromList(lista.id_lista, producto.id_producto)}
+                              >
+                                X
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))
+                  )}
                 </div>
-                {showProductSelectForList === lista.id_lista && (
-                  <select
-                    className="border p-2 w-full rounded mb-2 "
-                    onChange={(e) => handleProductSelectionForList(lista.id_lista, parseInt(e.target.value))}
-                  >
-                    <option value="">Selecciona un producto</option>
-                    {allProducts
-                      .filter((p) => !lista.productos.some((pr) => pr.id_producto === p.id_producto))
-                      .map((producto) => (
-                        <option key={producto.id_producto} value={producto.id_producto}>
-                          {producto.nombre_producto}
-                        </option>
-                      ))}
-                  </select>
-                )}
-                <ul className="list-disc pl-5">
-                  {lista.productos.map((producto) => (
-                    <li key={producto.id_producto} className="flex justify-between items-center border p-2 rounded border-gray-300 mb-2">
-                      {producto.nombre_producto}
-                      <button
-                        className="text-red-500"
-                        onClick={() => handleRemoveProductFromList(lista.id_lista, producto.id_producto)}
-                      >
-                        X
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>

@@ -123,23 +123,35 @@ const ProductsPage = () => {
 
   const handleDeleteProduct = async (id_producto: number) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar este producto?")) return;
-
+  
     setLoading(true);
     setError("");
+    
     try {
-      await axios.delete(`http://localhost:3000/api/products/${id_producto}`, {
+      const response = await axios.delete(`http://localhost:3000/api/products/${id_producto}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchProductos(); // Recargar lista después de eliminar
-      toast.success("Producto eliminado correctamente");
-    } catch (err) {
+  
+      if (response.status === 200) {
+        toast.success(response.data.mensaje || "Producto eliminado correctamente");
+        fetchProductos(); // Recargar lista después de eliminar
+      }
+    } catch (err: any) {
       console.error("Error al eliminar producto:", err);
-      setError("No se pudo eliminar el producto. Intenta nuevamente.");
+      
+      if (err.response) {
+        const errorMessage = err.response.data.mensaje || "No se pudo eliminar el producto.";
+        toast.error(errorMessage);
+        setError(errorMessage);
+      } else {
+        toast.error("Hubo un error en la conexión con el servidor.");
+        setError("Error de conexión. Intenta nuevamente.");
+      }
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar isLoggedIn={isLoggedIn} userRole={userRole ?? undefined} />

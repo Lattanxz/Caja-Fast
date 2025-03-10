@@ -142,13 +142,13 @@ const StatisticsForm: React.FC = () => {
               📊 ESTADÍSTICAS
               </h1>
               <div>
-          <button 
-            onClick={handleBack} 
-            className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
-          >
-            Volver
-          </button>
-        </div>
+              <button 
+                onClick={handleBack} 
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+              >
+                Volver
+              </button>
+            </div>
             </div>
           </div>
         </header>
@@ -194,7 +194,7 @@ const StatisticsForm: React.FC = () => {
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <p className="text-gray-500">No hay datos de recaudación disponibles</p>
+                    <p className="text-gray-500 ">No hay datos de recaudación disponibles</p>
                   )}
                 </div>
 
@@ -223,7 +223,7 @@ const StatisticsForm: React.FC = () => {
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <p className="text-gray-500">No hay datos de productos disponibles</p>
+                    <p className="text-gray-500 ml-8">No hay datos de productos disponibles</p>
                   )}
                 </div>
               </div>
@@ -258,7 +258,7 @@ const StatisticsForm: React.FC = () => {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <p className="text-gray-500">
+                <p className="text-gray-500 ml-8">
                   No hay datos de métodos de pago disponibles
                 </p>
               )}

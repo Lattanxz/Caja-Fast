@@ -235,6 +235,7 @@ const handleAddSale = async () => {
 
   const newSale = {
     id_caja,
+    id_lista, // Agregar id_lista al objeto
     id_producto: parseInt(selectedProduct),
     cantidad,
     id_metodo_pago: selectedMetodoPago,
@@ -253,9 +254,6 @@ const handleAddSale = async () => {
     toast.error("Error al registrar la venta.");
   }
 };
-
-
-
   const columns = [
     {
       header: "Nombre Producto",
@@ -304,58 +302,62 @@ const handleAddSale = async () => {
           </div>
         </header>
 
-        <div className="flex flex-col justify-center items-center min-h-screen space-y-8">
-          {/* Contenedor de ventas */}
-          <div className="p-4 border rounded-xl shadow-lg bg-black text-orange-300 max-w-[1000px] w-full">
-            <div className="flex justify-between mb-4">
-              <button onClick={() => navigate("/boxes")} className="bg-orange-500 text-black p-2 rounded">← Volver</button>
-              <button className="bg-orange-500 text-black p-2 rounded">Gestionar Lista Productos</button>
-              <button className="bg-orange-500 text-black p-2 rounded" onClick={handleCloseBox}>Cerrar Caja</button>
-            </div>
+        <div className="flex flex-col justify-center items-center bg-white mt-4">
 
-            <div className="overflow-y-auto max-h-[400px]">
-              <table className="w-full border-collapse text-center">
-                <thead>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <tr key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <th key={header.id} className="border p-2">{flexRender(header.column.columnDef.header, header.getContext())}</th>
+  {/* Recuadro negro central */}
+        <div className="bg-black text-orange-300 p-8 rounded-xl shadow-lg max-w-[1000px] w-full">
+    
+    {/* Botones de navegación */}
+    {/* Botones de navegación */}
+    <div className="flex justify-center space-x-60 mb-6">
+      <button onClick={() => navigate("/boxes")} className="bg-orange-500 text-black p-2 rounded">← Volver</button>
+      <button className="bg-orange-500 text-black p-2 rounded">Gestionar Lista Productos</button>
+      <button className="bg-orange-500 text-black p-2 rounded" onClick={handleCloseBox}>Cerrar Caja</button>
+    </div>
+    {/* Título */}
+          <h2 className="text-2xl font-bold text-center mb-6 mt-6 border p-6 ">Nombre de la caja: {nombreCaja || 'Cargando...'}</h2>
+
+          {/* Tabla de ventas */}
+          <div className="overflow-y-auto max-h-[400px]">
+            <table className="w-full border-collapse text-center">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <th key={header.id} className="border p-2">{flexRender(header.column.columnDef.header, header.getContext())}</th>
+                    ))}
+                    <th className="border p-2">Acciones</th>
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {sales.length > 0 ? (
+                  table.getRowModel().rows.map((row) => (
+                    <tr key={row.id} className="border">
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className="border p-2">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
                       ))}
-                      <th className="border p-2">Acciones</th>
+                      <td className="border p-2 flex justify-center space-x-2">
+                        <button onClick={() => handleEdit(row.original)}>
+                          <Pencil className="text-orange-500 cursor-pointer" />
+                        </button>
+                        <button onClick={() => handleDelete(row.original.id_venta)}>
+                          <X className="text-red-500 cursor-pointer" />
+                        </button>
+                      </td>
                     </tr>
-                  ))}
-                </thead>
-                <tbody>
-                  {sales.length > 0 ? (
-                    table.getRowModel().rows.map((row) => (
-                      <tr key={row.id} className="border">
-                        {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id} className="border p-2">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                        ))}
-                        <td className="border p-2 flex justify-center space-x-2">
-                          <button onClick={() => handleEdit(row.original)}>
-                            <Pencil className="text-orange-500 cursor-pointer" />
-                          </button>
-                          <button onClick={() => handleDelete(row.original.id_venta)}>
-                            <X className="text-red-500 cursor-pointer" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={table.getHeaderGroups()[0]?.headers.length + 1 || 1} className="text-center py-4">No hay ventas registradas</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={table.getHeaderGroups()[0]?.headers.length + 1 || 1} className="text-center py-4">No hay ventas registradas</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
-          {/* Formulario de agregar venta */}
-          <div className="p-4 border rounded-xl shadow-lg bg-black text-orange-300 max-w-[1000px] w-full">
-            <div className="flex justify-between items-center">
-              {/* Selección de producto, cantidad, método de pago y botón */}
+            {/* Formulario de agregar venta */}
+            <div className="flex justify-center items-center space-x-4 mt-6">
               <select
                 className="bg-orange-500 p-2 rounded text-black"
                 value={selectedProduct}
@@ -392,16 +394,20 @@ const handleAddSale = async () => {
               </select>
               <button className="bg-orange-500 p-2 rounded" onClick={handleAddSale}>Agregar</button>
             </div>
-          </div>
 
-          {/* Muestra el total de todas las ventas */}
-          <div className="p-4 border rounded-xl shadow-lg bg-black text-orange-300 max-w-[1000px] w-full mt-4">
-            <h3 className="text-xl font-bold">Total de la venta: ${calcularTotal().toFixed(2)}</h3>
-          </div>
-          
-          <ChartsDashboard sales={salesData} metodoPago={paymentPercentages} />
+            {/* Total de ventas */}
+            <div className="text-center mt-6">
+              <h3 className="text-2xl font-bold">Total de la venta: ${calcularTotal().toFixed(2)}</h3>
+            </div>
 
+            {/* Gráficas */}
+            {/* Gráficas */}
+            <div className="mt-8">
+              {salesData.length > 0 && <ChartsDashboard sales={salesData} metodoPago={paymentPercentages} />}
+            </div>
+          </div>
         </div>
+
 
         {isModalOpen && selectedSale && (
           <ModalEditSale

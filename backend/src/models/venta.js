@@ -46,6 +46,16 @@ const Venta = sequelize.define(
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
+    id_lista: {  // Agregando la columna id_lista
+      type: DataTypes.INTEGER,
+      allowNull: true, // Se puede permitir null si no siempre está asociado
+      references: {
+        model: "listas", // Relación con la tabla 'listas'
+        key: "id_lista",
+      },
+      onUpdate: "CASCADE",
+      onDelete: "SET NULL", // El valor se establece a NULL si la lista es eliminada
+    },
   },
   {
     tableName: "ventas",

@@ -7,7 +7,7 @@ const { sequelize } = require("../config/db");
 
 // Añadir producto vendido
 const addProductToSale = async (req, res) => {
-  const { id_producto, cantidad, id_metodo_pago, id_caja, nombre_caja } = req.body;
+  const { id_producto, cantidad, id_metodo_pago, id_caja, nombre_caja, id_lista } = req.body; // <-- Agrega id_lista
 
   try {
     const producto = await Producto.findByPk(id_producto);
@@ -25,6 +25,7 @@ const addProductToSale = async (req, res) => {
       nombre_producto: producto.nombre_producto,
       precio_producto: subtotal,
       fecha_venta: new Date(),
+      id_lista: id_lista, // <-- Aquí se agrega id_lista a la venta
     });
 
     if (!venta) {
@@ -222,7 +223,7 @@ async function getTopProducts(req, res) {
       return res.status(400).json({ error: 'id_usuario es obligatorio' });
     }
 
-    // Obtenemos los productos más vendidos sumando las cantidades vendidas
+    // Obtenemos los productos más vendidos sumando las cantidades vendidas desde la tabla 'ventas'
     const topProducts = await Venta.findAll({
       attributes: [
         'nombre_producto',
@@ -241,28 +242,6 @@ async function getTopProducts(req, res) {
       limit: 5
     });
 
-    // Iteramos sobre los productos más vendidos y actualizamos las cantidades
-    for (let product of topProducts) {
-      const nombreProducto = product.nombre_producto;
-      const cantidadVendida = product.dataValues.cantidadVendida;
-
-      // Verificamos si el producto existe en la tabla de productos
-      const productoExistente = await Producto.findOne({ where: { nombre_producto: nombreProducto } });
-
-      if (productoExistente) {
-        // Si el producto existe, actualizamos la cantidad vendida
-        await productoExistente.update({
-          cantidad_vendida: sequelize.literal(`cantidad_vendida + ${cantidadVendida}`)
-        });
-      } else {
-        // Si el producto no existe, lo creamos con la cantidad vendida
-        await Producto.create({
-          nombre_producto: nombreProducto,
-          cantidad_vendida: cantidadVendida
-        });
-      }
-    }
-
     // Respondemos con los productos más vendidos
     return res.status(200).json(topProducts);
 
@@ -271,6 +250,7 @@ async function getTopProducts(req, res) {
     return res.status(500).json({ error: "Hubo un error al obtener los productos más vendidos." });
   }
 }
+
 
 const getPaymentMethodUsage = async (req, res) => {
   try {
@@ -333,9 +313,6 @@ const getPaymentMethodUsage = async (req, res) => {
     res.status(500).json({ error: "Error al obtener los datos." });
   }
 };
-
-
-
 
 
 module.exports = {

@@ -2,6 +2,8 @@ const pool = require("../config/db");
 const Listas = require("../models/lista");
 const Producto = require("../models/productosGeneral");
 const ProductoLista = require("../models/productoLista");
+const Caja = require("../models/cajas");
+const Venta = require("../models/venta");
 
 // Crear una lista
 const createList = async (req, res) => {
@@ -179,11 +181,29 @@ const removeProductFromList = async (req, res) => {
 };
 
 // Eliminar una lista y sus productos asociados
+
 const removeList = async (req, res) => {
   const { id_lista } = req.params;
 
   try {
-    // Verificar si la lista existe antes de eliminarla usando Sequelize
+    // Verificar si hay ventas asociadas a la lista en cajas abiertas
+    const countCajasAbiertas = await Venta.count({
+      where: { id_lista },  // Filtra por la lista
+      include: {
+        model: Caja,
+        where: { estado: 'abierto' },  // Verifica que la caja esté abierta
+        required: true, // Realiza el INNER JOIN con la tabla Caja
+      },
+    });
+
+    // Si existen ventas asociadas a una caja abierta, no se puede eliminar la lista
+    if (countCajasAbiertas > 0) {
+      return res.status(400).json({
+        message: "No se puede eliminar la lista porque tiene ventas asociadas a cajas abiertas. Debe cerrarse la caja primero.",
+      });
+    }
+
+    // Verificar si la lista existe
     const list = await Listas.findOne({ where: { id_lista } });
 
     if (!list) {
@@ -192,10 +212,10 @@ const removeList = async (req, res) => {
       });
     }
 
-    // Eliminar los productos asociados a la lista en productos_listas
+    // Eliminar productos asociados a la lista
     await ProductoLista.destroy({ where: { id_lista } });
 
-    // Eliminar la lista de la tabla listas
+    // Eliminar la lista
     await list.destroy();
 
     res.status(200).json({
@@ -209,21 +229,32 @@ const removeList = async (req, res) => {
   }
 };
 
+
+
+
 const getAllLists = async (req, res) => {
   try {
-    // Obtener todas las listas con sus productos asociados
+    // Extraemos `id_usuario` de req.query en lugar de `req.user`
+    const { id_usuario } = req.query;
+
+    if (!id_usuario) {
+      return res.status(400).json({ message: "Falta el ID del usuario" });
+    }
+
+    // Obtener solo las listas del usuario autenticado
     const listas = await Listas.findAll({
+      where: { id_usuario },
       include: [
         {
           model: Producto,
-          through: { attributes: [] }, // No queremos incluir los atributos de la tabla intermedia
+          through: { attributes: [] }, // No incluir atributos de la tabla intermedia
           attributes: ["id_producto", "nombre_producto"],
         },
       ],
       order: [["id_lista", "ASC"], [Producto, "nombre_producto", "ASC"]],
     });
 
-    // Transformar los datos para que coincidan con el formato esperado
+    // Transformar los datos para coincidir con el formato esperado
     const listsWithProducts = listas.map((lista) => ({
       id_lista: lista.id_lista,
       nombre_lista: lista.nombre_lista,
@@ -233,7 +264,6 @@ const getAllLists = async (req, res) => {
       })),
     }));
 
-    // Enviar el resultado como un array (incluso si está vacío)
     res.status(200).json(listsWithProducts);
   } catch (error) {
     console.error("Error al obtener las listas y sus productos:", error);

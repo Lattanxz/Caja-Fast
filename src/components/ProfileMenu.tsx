@@ -29,15 +29,16 @@ const ProfileMenu = () => {
               },
             }
           );
-
+  
           // Verificar los datos que recibe la API
           console.log("Respuesta de la API:", response.data);
-
+  
           // Si la respuesta es exitosa, actualiza el estado del usuario
           if (response.status === 200) {
+            const roleName = response.data.id_rol === 1 ? "Usuario" : response.data.id_rol === 2 ? "Administrador" : "Rol no disponible";
             setUserData({
-              name: response.data.nombre_usuario || "Nombre no disponible", // Asegúrate de que el campo sea correcto
-              role: response.data.rol_usuario || "Rol no disponible", // Asegúrate de que el campo sea correcto
+              name: response.data.nombre_usuario || "Nombre no disponible",
+              role: roleName, // Aquí transformamos el id_rol en el nombre del rol
             });
           } else {
             console.error(
@@ -49,12 +50,13 @@ const ProfileMenu = () => {
           console.error("Error al obtener los datos del usuario:", error);
         }
       };
-
+  
       fetchUserData();
     } else {
       console.log("userId o token no están disponibles");
     }
-  }, [userId, token]); // Dependemos de userId y token para hacer la llamada a la API
+  }, [userId, token]);
+  
 
   // Manejar el cierre de sesión usando axios
   const handleLogout = async () => {

@@ -268,7 +268,7 @@ const createBox = async (req, res) => {
   console.log("Request recibido:", req.body);
   console.log("Usuario autenticado en req.user:", req.user);
 
-  const { nombre_caja, fecha_apertura, estado = true, productos = [] } = req.body;
+  const { nombre_caja, fecha_apertura, estado = "abierto", productos = [] } = req.body;
 
   // Validar que los campos obligatorios estén presentes
   if (!nombre_caja || !fecha_apertura) {
@@ -286,9 +286,9 @@ const createBox = async (req, res) => {
     return res.status(400).json({ message: "La fecha de apertura no es válida" });
   }
 
-  // Validar que el estado sea un booleano
-  if (typeof estado !== "boolean") {
-    return res.status(400).json({ message: "El campo 'estado' debe ser un booleano" });
+  // Validar que el estado sea "abierto" o "cerrado" (según tus necesidades)
+  if (estado !== "abierto" && estado !== "cerrado") {
+    return res.status(400).json({ message: "El estado debe ser 'abierto' o 'cerrado'" });
   }
 
   try {
@@ -299,7 +299,7 @@ const createBox = async (req, res) => {
     const nuevaCaja = await Cajas.create({
       nombre_caja,
       fecha_apertura: fechaValida,
-      estado,
+      estado,  // Aquí se guardará "abierto"
       id_usuario,
     });
 
@@ -337,6 +337,7 @@ const createBox = async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 };
+
 
 const getBoxById = async (req, res) => {
   const { id_caja } = req.params; // Recibir id_caja desde los parámetros de la URL

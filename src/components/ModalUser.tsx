@@ -48,11 +48,9 @@ const UserForm = ({
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-4 max-w-md mx-auto" onSubmit={handleSubmit}>
       <div>
-        <label htmlFor="name" className="block">
-          Nombre
-        </label>
+        <label htmlFor="name" className="block">Nombre</label>
         <input
           type="text"
           id="name"
@@ -64,9 +62,7 @@ const UserForm = ({
         />
       </div>
       <div>
-        <label htmlFor="email" className="block">
-          Email
-        </label>
+        <label htmlFor="email" className="block">Email</label>
         <input
           placeholder="Email Personal"
           type="email"
@@ -78,9 +74,7 @@ const UserForm = ({
         />
       </div>
       <div>
-        <label htmlFor="role" className="block">
-          Rol
-        </label>
+        <label htmlFor="role" className="block">Rol</label>
         <select
           id="role"
           name="role"
@@ -93,9 +87,7 @@ const UserForm = ({
         </select>
       </div>
       <div>
-        <label htmlFor="estado" className="block">
-          Estado
-        </label>
+        <label htmlFor="estado" className="block">Estado</label>
         <select
           id="estado"
           name="estado"
@@ -110,9 +102,7 @@ const UserForm = ({
         </select>
       </div>
       <div>
-        <label htmlFor="password" className="block">
-          Contraseña
-        </label>
+        <label htmlFor="password" className="block">Contraseña</label>
         <input
           type="password"
           id="password"

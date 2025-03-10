@@ -6,10 +6,14 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import {Producto} from "../types/index";
 import { useNavigate } from "react-router-dom";
-import BoxDetails from "./BoxesDetails";
+
+interface List {
+  id_lista: number;
+  nombre_lista: string;
+}
 
 const BoxesForm = () => {
-  const { userId, isLoggedIn, userRole  } = useAuth(); // Obtener el userId del contexto
+  const { userId, isLoggedIn, userRole, token  } = useAuth(); // Obtener el userId del contexto
   
   /* Inicio de contantes y estados */
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,10 +40,11 @@ const BoxesForm = () => {
   );
   const [nombreCaja, setNombreCaja] = useState("");
   const [fechaCaja, setFechaCaja] = useState("");
-  const [estadoCaja, setEstadoCaja] = useState(false); 
+  const [estadoCaja, setEstadoCaja] = useState(true); 
   const [cargando, setCargando] = useState(true);
   const [listaSeleccionada, setListaSeleccionada] = useState<string | "">("");
   const [selectedBox, setSelectedBox] = useState<number | null>(null);
+  const [lists, setLists] = useState<List[]>([]);
 
 /* Final de constantes y estados */
 
@@ -93,36 +98,29 @@ const navigate = useNavigate();
   // 3. Ver todas las listas
  
   const fetchListas = async () => {
-    if (userId) {
-      try {
-        const response = await axios.get(
-          `http://localhost:3000/api/lists`
-        );
+    try {
+      if (!userId || !token) return; // Evitar hacer la solicitud si no hay usuario o token
   
-        if (response.status === 200 && response.data.length === 0) {
-          console.log("No hay listas disponibles.");
-        }
+      const response = await axios.get<List[]>("http://localhost:3000/api/lists", {
+        headers: {
+          Authorization: `Bearer ${token}`, // Enviar el token en los headers
+        },
+        params: {
+          id_usuario: userId, // Enviar el userId en los parámetros
+        },
+      });
   
-        setListasDeProductos(response.data);
-        console.log("listas", response.data);
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          if (error.response?.status === 404) {
-            console.log("No se encontraron listas para este usuario.");
-            setListasDeProductos([]);
-          } else {
-            console.error("Error al obtener las listas de productos:", error.message);
-          }
-        } else {
-          console.error("Error desconocido:", error);
-        }
-      }
+      console.log("Datos obtenidos:", response.data);
+      setListasDeProductos(response.data); // Ahora usa el estado correcto
+    } catch (error) {
+      console.error("Error al obtener las listas:", error);
     }
   };
-
+  
   useEffect(() => {
     fetchListas();
-  }, [userId]); // 
+  }, [userId]);
+  
 
 
   const fetchProductos = async () => {
@@ -211,12 +209,15 @@ const navigate = useNavigate();
       const token = localStorage.getItem("token");
       const fechaTimestamp = new Date(fechaCaja).toISOString();
   
+      // Cambiar estadoCaja a "abierto" o "cerrado" según lo que se desee
+      const estado = estadoCaja ? "abierto" : "cerrado";  // Usando "abierto" si estadoCaja es true, o "cerrado" si es false
+
       const response = await axios.post(
         "http://localhost:3000/api/boxes/create",
         {
           nombre_caja: nombreCaja,
           fecha_apertura: fechaTimestamp,
-          estado: estadoCaja,
+          estado: estado,  // Enviar "abierto" o "cerrado"
         },
         {
           headers: {
@@ -229,20 +230,23 @@ const navigate = useNavigate();
   
       // Obtener el id_caja de la respuesta
       const idCajaCreada = response.data.id_caja;
-      
-
+  
       // Navegar a la página de ventas pasando id_lista en state
       navigate(`/sales/${idCajaCreada}`, { state: { id_lista: listaSeleccionada } });
   
       setNombreCaja("");
       setFechaCaja("");
-      setEstadoCaja(false);
+      setEstadoCaja(true); 
       setListaSeleccionada("");
   
       fetchCajas();
     } catch (error) {
       console.error("Error al crear la caja:", error);
     }
+  };
+  
+  const handleGestionar = (id_caja: string) => {
+    navigate(`/sales/${id_caja}`, { state: { id_lista: listaSeleccionada } });
   };
   
   const obtenerIdUsuarioDesdeToken = (token: string): number => {
@@ -272,16 +276,7 @@ const navigate = useNavigate();
       console.error("Error al decodificar el token:", error);
       throw new Error("No se pudo obtener el id_usuario desde el token");
     }
-  };
-
-  const handleGestionar = (id_caja: string) => {
-    if (!listaSeleccionada) {
-      console.error("No hay una lista seleccionada");
-      return;
-    }
-    navigate(`/sales/${id_caja}`, { state: { id_lista: listaSeleccionada } });
-  };
-  
+  };  
 
   const handleBoxProductos = async (nombreCaja: string, productosSeleccionados: Producto[]) => {
   try {
@@ -393,7 +388,7 @@ const handleViewDetails = (id_caja: number) => {
       <div className="container px-12 mx-auto text-sm text-black">
         <div className="flex justify-between items-center">
           <h1 className="text-center text-white text-2xl font-bold">
-            GESTIÓN DE CAJAS (Usuario ID: {userId})
+            GESTIÓN DE CAJAS
           </h1>
           <div className="flex space-x-4">
             <button
@@ -434,80 +429,81 @@ const handleViewDetails = (id_caja: number) => {
 
     {/* Modal */}
     <ModalReusable
-      isOpen={isModalOpen}
-      onClose={handleCloseModal}
-      title={
-        modalContent === "agregar" ? "GESTIÓN DE PRODUCTOS" : "Modal"
-      }
-    >
-      {modalContent === "agregar" && (
-        <div className="space-y-4 p-4">
-          <p className="mb-6 text-center">ELIGE UNA LISTA DE PRODUCTOS PARA ABRIR LA CAJA</p>
-          {listasDeProductos.length > 0 ? (
-            <div>
-              <select
-                className="bg-orange-500 text-white w-full py-2 rounded-lg"
-                onChange={(e) => setListaSeleccionada(e.target.value)}
-              >
-                <option value="">Seleccionar lista</option>
-                {listasDeProductos.map((lista) => (
-                  <option key={lista.id_lista} value={lista.id_lista}>
-                    {lista.nombre_lista}
-                  </option>
-                ))}
-              </select>
-              <div className="space-y-4 mt-4">
-                <input
-                  type="text"
-                  placeholder="Nombre de la caja"
-                  value={nombreCaja}
-                  onChange={(e) => setNombreCaja(e.target.value)}
-                  className="border rounded-lg px-4 py-2 text-black w-full"
-                />
-                <input
-                  type="date"
-                  placeholder="Fecha de creación"
-                  value={fechaCaja}
-                  onChange={(e) => setFechaCaja(e.target.value)}
-                  className="border rounded-lg px-4 py-2 text-black w-full"
-                />
-                <button
-                  onClick={handleCrearCaja}
-                  className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={modalContent === "agregar" ? "GESTIÓN DE PRODUCTOS" : "Modal"}
+      >
+        {modalContent === "agregar" && (
+          <div className="space-y-4 p-4">
+            <p className="mb-6 text-center">ELIGE UNA LISTA DE PRODUCTOS PARA ABRIR LA CAJA</p>
+            {listasDeProductos.length > 0 ? (
+              <div>
+                <select
+                  className="bg-orange-500 text-white w-full py-2 rounded-lg"
+                  onChange={(e) => {
+                    setListaSeleccionada(e.target.value);  // Aquí se actualiza el estado de listaSeleccionada
+                    console.log("Lista seleccionada:", e.target.value);  // Asegúrate de que el valor correcto se esté actualizando
+                  }}
                 >
-                  Crear Caja
+                  <option value="">Seleccionar lista</option>
+                  {listasDeProductos.map((lista) => (
+                    <option key={lista.id_lista} value={lista.id_lista}>
+                      {lista.nombre_lista}
+                    </option>
+                  ))}
+                </select>
+                <div className="space-y-4 mt-4">
+                  <input
+                    type="text"
+                    placeholder="Nombre de la caja"
+                    value={nombreCaja}
+                    onChange={(e) => setNombreCaja(e.target.value)}
+                    className="border rounded-lg px-4 py-2 text-black w-full"
+                  />
+                  <input
+                    type="date"
+                    placeholder="Fecha de creación"
+                    value={fechaCaja}
+                    onChange={(e) => setFechaCaja(e.target.value)}
+                    className="border rounded-lg px-4 py-2 text-black w-full"
+                  />
+                  <button
+                    onClick={handleCrearCaja}
+                    className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
+                  >
+                    Crear Caja
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center">
+                No hay listas disponibles, crea una
+                <button
+                  className="bg-green-500 text-white w-full py-2 rounded hover:bg-green-600 mt-4"
+                  onClick={() => navigate("/list")}
+                >
+                  CREAR LISTA
                 </button>
               </div>
-            </div>
-          ) : (
-            <div className="text-center">
-              No hay listas disponibles, crea una
-              <button
-                className="bg-green-500 text-white w-full py-2 rounded hover:bg-green-600 mt-4"
-                onClick={() => handleOpenModal("crearLista")}
-              >
-                CREAR LISTA
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </ModalReusable>
+            )}
+          </div>
+        )}
+      </ModalReusable>
 
     {/* Contenido Principal */}
     <main className="flex-grow container mx-auto px-4 py-6 flex flex-col items-center">
       {cargando ? (
         <p className="text-lg font-bold text-gray-500">Cargando cajas...</p>
       ) : cajas.length === 0 ? (
-        <p className="text-lg font-bold text-gray-500">No hay cajas creadas para este usuario.</p>
+        <p className="text-lg font-bold text-gray-500 mt-80">No hay cajas creadas para este usuario.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {cajas.map((caja, index) => (
             <div
               key={caja.id || `caja-${index}`}
-              className={`bg-gray-200 border-2 p-4 rounded-lg shadow-lg flex flex-col items-center transition-all duration-300 ${caja.estado === "cerrada" ? "border-red-500 bg-red-100 opacity-75" : "border-orange-400"}`}
+              className={`bg-gray-200 border-2 p-4 rounded-lg shadow-lg flex flex-col items-center transition-all duration-300 ${caja.estado === "cerrado" ? "border-red-500 bg-red-100 opacity-75" : "border-orange-400"}`}
             >
-              <h3 className={`text-lg font-bold mb-2 ${caja.estado === "cerrada" ? "text-red-600" : ""}`}>
+              <h3 className={`text-lg font-bold mb-2 ${caja.estado === "cerrado" ? "text-red-600" : ""}`}>
                 {caja.nombre_caja}
               </h3>
               <p className="text-sm text-gray-600 mb-2">
@@ -524,7 +520,7 @@ const handleViewDetails = (id_caja: number) => {
                   <Info className="w-4 h-4 mr-2" />
                   VER DETALLES
                 </button>
-                {caja.estado !== "cerrada" && (
+                {caja.estado !== "cerrado" && (
                   <button
                     className="bg-orange-400 text-black px-3 py-2 rounded-lg hover:bg-orange-500 flex items-center"
                     onClick={() => handleGestionar(caja.id_caja)}
