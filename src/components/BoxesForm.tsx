@@ -19,6 +19,7 @@ const BoxesForm = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<
     | "agregar"
+    | "eliminarCaja"
     | "detalles"
     | "gestionar"
     | "cargarLista"
@@ -174,6 +175,7 @@ const navigate = useNavigate();
   const handleOpenModal = (
     type:
       | "agregar"
+      | "eliminarCaja"
       | "gestionar"
       | "cargarLista"
       | "crearLista"
@@ -213,6 +215,8 @@ const navigate = useNavigate();
       console.error("Error al eliminar la caja:", error);
     }
   };
+
+  
 
 
   /* Crear caja */
@@ -444,7 +448,7 @@ const handleViewDetails = (id_caja: number) => {
     <ModalReusable
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={modalContent === "agregar" ? "GESTIÓN DE PRODUCTOS" : "Modal"}
+        title={modalContent === "agregar" ? "GESTIÓN DE PRODUCTOS" : "ELIMINAR CAJA"}
       >
         {modalContent === "agregar" && (
           <div className="space-y-4 p-4">
@@ -490,15 +494,39 @@ const handleViewDetails = (id_caja: number) => {
               </div>
             ) : (
               <div className="text-center">
-                No hay listas disponibles, crea una
+                <p className="m-12">No hay listas disponibles, crea una!</p>
                 <button
-                  className="bg-green-500 text-white w-full py-2 rounded hover:bg-green-600 mt-4"
+                  className="bg-blue-500 text-white w-full py-2 rounded hover:bg-blue-600 mt-4"
                   onClick={() => navigate("/list")}
                 >
                   CREAR LISTA
                 </button>
               </div>
             )}
+            </div>
+        )}
+       {modalContent === "eliminarCaja" &&(
+          <div className="space-y-4 p-4">
+            <p className="text-center text-white">¿Estás seguro de que deseas eliminar esta caja?</p>
+            <div className="flex justify-center space-x-4">
+            <button
+                onClick={() => {
+                  if (selectedCaja !== null) {
+                    handleDeleteCaja(selectedCaja); // Solo llama si selectedCaja no es null
+                    handleCloseModal();
+                  }
+                }}
+                className="bg-red-600 text-white px-6 py-2 rounded-lg"
+              >
+                Eliminar
+              </button>
+              <button
+                onClick={handleCloseModal}
+                className="bg-gray-300 text-black px-6 py-2 rounded-lg"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         )}
       </ModalReusable>
@@ -546,10 +574,8 @@ const handleViewDetails = (id_caja: number) => {
               <button
                 className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 flex items-center"
                 onClick={() => {
-                  if (window.confirm(`¿Estás seguro que deseas eliminar la caja "${caja.nombre_caja}"?`)) {
-                    handleDeleteCaja(caja.id_caja);
-                    alert(`La caja "${caja.nombre_caja}" fue eliminada exitosamente.`);
-                  }
+                  handleOpenModal("eliminarCaja", caja.id_caja); // Pasa el id_caja al modal
+                  
                 }}
               >
                 <Trash2 className="w-4 h-4 mr-2" />

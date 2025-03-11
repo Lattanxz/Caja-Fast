@@ -251,7 +251,7 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
               {/* Botón Agregar Lista alineado a la derecha */}
               <div className="flex justify-end">
                 <button
-                  className="bg-black text-white p-2 rounded"
+                  className="bg-blue-500 text-white p-2 rounded" 
                   onClick={() => setShowForm(true)}
                 >
                   Agregar Lista
@@ -305,7 +305,7 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
               )}
                 <div className="space-y-4 h-[650px] overflow-y-auto p-4 border rounded">
                   {lists.length === 0 ? (
-                    <p className="text-center text-gray-500 text-lg font-semibold">No hay listas para este usuario</p>
+                    <p className="text-center text-gray-500 text-lg font-semibold mt-60">No hay listas para este usuario aún.</p>
                   ) : (
                     lists.map((lista) => (
                       <div key={lista.id_lista} className="border p-4 rounded shadow-md border-black">

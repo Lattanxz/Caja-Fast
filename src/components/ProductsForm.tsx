@@ -25,6 +25,9 @@ const ProductsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");   
   const [showForm, setShowForm] = useState(false); // Estado para mostrar el formulario
+  const [showModal, setShowModal] = useState(false); // Estado para el modal de confirmación
+  const [productToDelete, setProductToDelete] = useState<number | null>(null); // Producto seleccionado para eliminar
+
   
   const navigate = useNavigate();
 
@@ -132,24 +135,24 @@ const ProductsPage = () => {
     }
   };
 
-  const handleDeleteProduct = async (id_producto: number) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este producto?")) return;
+  const handleDeleteProduct = async () => {
+    if (!productToDelete) return;
   
     setLoading(true);
     setError("");
-    
+  
     try {
-      const response = await axios.delete(`http://localhost:3000/api/products/${id_producto}`, {
+      const response = await axios.delete(`http://localhost:3000/api/products/${productToDelete}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
   
       if (response.status === 200) {
         toast.success(response.data.mensaje || "Producto eliminado correctamente");
-        fetchProductos(); // Recargar lista después de eliminar
+        fetchProductos();
       }
     } catch (err: any) {
       console.error("Error al eliminar producto:", err);
-      
+  
       if (err.response) {
         const errorMessage = err.response.data.mensaje || "No se pudo eliminar el producto.";
         toast.error(errorMessage);
@@ -160,8 +163,10 @@ const ProductsPage = () => {
       }
     } finally {
       setLoading(false);
+      setShowModal(false); // Cerrar el modal después de la eliminación
     }
   };
+  
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -185,7 +190,7 @@ const ProductsPage = () => {
           {/* Botón Agregar Producto al lado derecho */}
           <button
             onClick={() => setShowForm(!showForm)}
-            className="bg-blue-500 text-white p-2 rounded"
+            className="bg-green-500 text-white p-2 rounded"
           >
             <Plus />
           </button>
@@ -239,7 +244,7 @@ const ProductsPage = () => {
                 </tr>
               ) : productos.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center p-4">No hay productos disponibles.</td>
+                  <td colSpan={4} className="text-center p-4">No hay productos disponibles aún.</td>
                 </tr>
               ) : (
                 productos.map((product) => (
@@ -257,7 +262,10 @@ const ProductsPage = () => {
                       }} className="bg-yellow-500 text-white p-2 rounded">
                         <Pencil />
                       </button>
-                      <button onClick={() => handleDeleteProduct(product.id_producto)} className="bg-red-500 text-white p-2 rounded">
+                      <button onClick={() => {
+                        setProductToDelete(product.id_producto);
+                        setShowModal(true);
+                      }} className="bg-red-500 text-white p-2 rounded">
                         <Trash />
                       </button>
                     </td>
@@ -268,6 +276,22 @@ const ProductsPage = () => {
           </table>
         </div>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h3 className="text-lg font-bold">¿Estás seguro de que quieres eliminar este producto?</h3>
+            <div className="mt-4 flex justify-end gap-4">
+              <button onClick={() => setShowModal(false)} className="bg-gray-300 text-black py-2 px-4 rounded">
+                Cancelar
+              </button>
+              <button onClick={handleDeleteProduct} className="bg-red-500 text-white py-2 px-4 rounded">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
