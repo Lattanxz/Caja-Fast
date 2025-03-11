@@ -14,9 +14,6 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, userRole }) => {
   const [mobileMenuIsOpen, setMobileMenuIsOpen] = useState(false);
   const navigate = useNavigate();
 
-  console.log("isLoggedIn:", isLoggedIn);
-  console.log("userRole:", userRole);
-
   const toggleNavMenu = () => {
     setMobileMenuIsOpen(!mobileMenuIsOpen);
   };
@@ -27,6 +24,34 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, userRole }) => {
 
   const handleOtherNavigation = (href: string) => {
     if (href !== "#") navigate(href);
+  };
+
+  const renderAdminLinks = () => {
+    return (
+      <>
+        <li className="hover:cursor-pointer">
+          <a
+            className="hover:opacity-75"
+            onClick={() => handleOtherNavigation("/users")}
+          >
+            Usuarios
+          </a>
+        </li>
+      </>
+    );
+  };
+
+  const renderUserLinks = () => {
+    return (
+      <li className="hover:cursor-pointer">
+        <a
+          className="hover:opacity-75"
+          onClick={() => handleOtherNavigation("/boxes")}
+        >
+          Cajas
+        </a>
+      </li>
+    );
   };
 
   return (
@@ -44,36 +69,8 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, userRole }) => {
           <ul className="hidden lg:flex ml-14 space-x-12">
             {isLoggedIn && userRole !== undefined && (
               <>
-                {userRole === 2 && (
-                  <>
-                    <li className="hover:cursor-pointer">
-                      <a
-                        className="hover:opacity-75"
-                        onClick={() => handleOtherNavigation("/boxes")}
-                      >
-                        Cajas
-                      </a>
-                    </li>
-                    <li className="hover:cursor-pointer">
-                      <a
-                        className="hover:opacity-75"
-                        onClick={() => handleOtherNavigation("/users")}
-                      >
-                        Usuarios
-                      </a>
-                    </li>
-                  </>
-                )}
-                {userRole === 1 && (
-                  <li className="hover:cursor-pointer">
-                    <a
-                      className="hover:opacity-75"
-                      onClick={() => handleOtherNavigation("/boxes")}
-                    >
-                      Cajas
-                    </a>
-                  </li>
-                )}
+                {userRole === 2 && renderAdminLinks()}
+                {userRole === 1 && renderUserLinks()}
               </>
             )}
           </ul>

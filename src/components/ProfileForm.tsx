@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import ResetPasswordModal from "./ResetPasswordProfile"; // Importar el ResetPasswordModal
 
 const ProfileForm = () => {
-  const { userId, token } = useAuth();
+  const { userId, token, userRole } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
@@ -130,7 +130,7 @@ const ProfileForm = () => {
 
   return (
     <>
-      <Navbar isLoggedIn={true} />
+      <Navbar isLoggedIn={true} userRole={userRole ?? undefined} />
       <header className="bg-black py-4">
         <div className="container px-12 mx-auto relative text-sm text-black">
           <div className="flex justify-between items-center">

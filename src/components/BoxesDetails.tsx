@@ -18,12 +18,13 @@ interface PaymentMethod {
 }
 
 interface BoxDetailsData {
+  nombre_caja: string;
+  fecha_apertura: string;
   totalRecaudado: number;
   productosVendidos: ProductSold[];
   totalProductosVendidos: number;
   metodosPago: PaymentMethod[];
 }
-
 const COLORS = ["#4CAF50", "#8884d8", "#FFBB28", "#FF8042", "#82ca9d"];
 
 const BoxDetails: React.FC = () => {
@@ -58,6 +59,35 @@ const BoxDetails: React.FC = () => {
       navigate('/boxes'); // Redirige al usuario a /boxes
     };
   
+    const downloadCSV = () => {
+      if (!boxDetails) return;
+
+      let csvContent = "data:text/csv;charset=utf-8,";
+    
+      // Encabezados
+      csvContent += `Nombre de la Caja:,${boxDetails.nombre_caja}\n`;
+      csvContent += `Fecha de Creación:,${new Date(boxDetails.fecha_apertura).toISOString().split('T')[0]}\n\n`;
+    
+      csvContent += "Producto,Cantidad\n";
+      boxDetails.productosVendidos.forEach((prod) => {
+        csvContent += `${prod.nombre_producto},${prod.cantidad}\n`;
+      });
+    
+      csvContent += "\nMétodo de Pago,Monto\n";
+      boxDetails.metodosPago.forEach((mp) => {
+        csvContent += `${mp.tipo_metodo_pago},${mp.monto}\n`;
+      });
+    
+      csvContent += `\nTotal Recaudado,${boxDetails.totalRecaudado}\n`;
+    
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Caja_${boxDetails.nombre_caja}.csv`);
+      document.body.appendChild(link);
+      link.click();
+    };
+
 
     if (loading) return <div className="text-center text-xl text-gray-600">Cargando detalles...</div>;
   
@@ -91,6 +121,27 @@ const BoxDetails: React.FC = () => {
         </header>
   
         <main className="container mx-auto px-4 py-6">
+        <section className="mb-8">
+            <h2 className="text-xl font-bold mb-4">Información de la Caja</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-4 shadow-md rounded-lg text-center">
+                <h3 className="text-lg font-semibold">Nombre de la Caja</h3>
+                <p className="text-2xl font-bold text-gray-700">
+                  {boxDetails?.nombre_caja ?? 'Desconocido'}
+                </p>
+              </div>
+              <div className="bg-white p-4 shadow-md rounded-lg text-center">
+                <h3 className="text-lg font-semibold">Fecha de Creación</h3>
+                <p className="text-2xl font-bold text-gray-700">
+                {
+                boxDetails?.fecha_apertura 
+                  ? new Date(boxDetails.fecha_apertura).toISOString().split('T')[0] 
+                  : 'No disponible'
+              }
+                </p>
+              </div>
+            </div>
+          </section>
           {/* Resumen General */}
           <section className="mb-8">
             <h2 className="text-xl font-bold mb-4">Resumen General</h2>
@@ -167,6 +218,12 @@ const BoxDetails: React.FC = () => {
                 )}
             </div>
             </section>
+
+            <section className="mb-8 text-center">
+              <button onClick={downloadCSV} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                Exportar Datos a CSV 📥
+              </button>
+          </section>
         </main>
       </div>
     );

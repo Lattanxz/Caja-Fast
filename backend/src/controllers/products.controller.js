@@ -64,6 +64,11 @@ const createProduct = async (req, res) => {
     return res.status(400).json({ mensaje: 'Todos los campos son obligatorios.' });
   }
 
+  // Validar que la descripción tenga al menos 10 caracteres
+  if (descripcion_producto.length < 10) {
+    return res.status(400).json({ mensaje: 'La descripción del producto debe tener al menos 10 caracteres.' });
+  }
+
   try {
     const product = await Producto.create({
       nombre_producto,
@@ -74,10 +79,11 @@ const createProduct = async (req, res) => {
 
     res.status(201).json(product);
   } catch (err) {
-    console.error(err);
+    console.error('Error al crear el producto:', err);
     res.status(500).json({ mensaje: "Error al crear el producto" });
   }
 };
+
 
 
 

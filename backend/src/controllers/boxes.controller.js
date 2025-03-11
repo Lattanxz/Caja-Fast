@@ -379,9 +379,9 @@ const getBoxDetails = async (req, res) => {
     const caja = await Cajas.findByPk(id_caja, {
       include: [{ model: Venta, include: [MetodoPago] }],
     });
-    
+
     console.log("Caja con ventas:", JSON.stringify(caja, null, 2));
-    
+
     if (!caja) {
       return res.status(404).json({ message: "Caja no encontrada" });
     }
@@ -390,13 +390,12 @@ const getBoxDetails = async (req, res) => {
     if (!caja.Venta || !Array.isArray(caja.Venta)) {
       return res.status(500).json({ error: "Las ventas de la caja no se encuentran disponibles." });
     }
-    
+
     const totalRecaudado = caja.Venta.reduce((acc, venta) => acc + (venta.precio_producto), 0);
 
     // Agrupar los productos vendidos
     const { productosVendidos, totalProductosVendidos } = caja.Venta.reduce(
       (acc, venta) => {
-        // Agrupar productos por nombre
         const productoIndex = acc.productosVendidos.findIndex(
           (p) => p.nombre_producto === venta.nombre_producto
         );
@@ -409,7 +408,6 @@ const getBoxDetails = async (req, res) => {
           });
         }
 
-        // Sumar la cantidad total de productos vendidos
         acc.totalProductosVendidos += venta.cantidad;
 
         return acc;
@@ -435,20 +433,26 @@ const getBoxDetails = async (req, res) => {
     const metodosPagoConPorcentaje = metodosPago.map(metodo => ({
       tipo_metodo_pago: metodo.tipo_metodo_pago,
       monto: metodo.monto,
-      porcentaje: parseFloat(((metodo.monto / totalRecaudado) * 100).toFixed(2))
+      porcentaje: parseFloat(((metodo.monto / totalRecaudado) * 100).toFixed(2)),
     }));
 
-    res.json({
+    // Incluir datos adicionales: nombre de la caja y fecha de creación
+    const cajaData = {
+      nombre_caja: caja.nombre_caja, // Suponiendo que `nombre_caja` existe en la tabla `Cajas`
+      fecha_apertura: caja.fecha_apertura, // Suponiendo que `fecha_creacion` existe en la tabla `Cajas`
       totalRecaudado,
       productosVendidos,
       totalProductosVendidos,
       metodosPago: metodosPagoConPorcentaje,
-    });
+    };
+
+    res.json(cajaData); // Devolver todos los datos, incluyendo el nombre y la fecha de creación
   } catch (error) {
     console.error("Error al obtener los detalles de la caja:", error);
     res.status(500).json({ error: "Error al obtener los detalles de la caja." });
   }
 };
+
 
 module.exports = {
   getProductsFromBox,

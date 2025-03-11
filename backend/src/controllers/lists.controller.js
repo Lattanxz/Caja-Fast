@@ -16,6 +16,18 @@ const createList = async (req, res) => {
   }
 
   try {
+    // Verificar si el usuario tiene productos
+    const productosDelUsuario = await Producto.findAll({
+      where: { id_usuario } // Filtrar productos por el id_usuario
+    });
+
+    // Si no hay productos, devolver un mensaje de error
+    if (productosDelUsuario.length === 0) {
+      return res.status(400).json({
+        message: "Debe crear productos antes de poder crear una lista."
+      });
+    }
+
     // Crear la nueva lista
     const nuevaLista = await Listas.create({
       nombre_lista,
@@ -24,8 +36,8 @@ const createList = async (req, res) => {
       fecha_creacion: new Date()
     });
 
+    // Si se proporcionan productos, asociarlos con la lista
     if (productos && productos.length > 0) {
-      // Asociar productos a la lista en la tabla intermedia producto_lista
       const productosLista = productos.map((producto) => ({
         id_lista: nuevaLista.id_lista,
         id_producto: producto.id_producto // Accedemos al id_producto dentro del objeto
@@ -43,6 +55,7 @@ const createList = async (req, res) => {
     res.status(500).json({ message: "Error al crear la lista." });
   }
 };
+
 
 
 const addProductToList = async (req, res) => {

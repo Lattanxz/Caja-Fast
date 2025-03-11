@@ -109,9 +109,6 @@ const StatisticsForm: React.FC = () => {
       }
     };
     
-    
-    
-  
     fetchStats();
     fetchRevenueByDate();
     fetchTopProducts();
@@ -122,6 +119,37 @@ const StatisticsForm: React.FC = () => {
     console.log('Top products updated:', topProducts);  // Ahora deberías ver los productos actualizados
   }, [topProducts]);  // Este efecto se dispara solo cuando topProducts cambia
 
+    // 🔹 Función para exportar datos a CSV
+    const exportToCSV = () => {
+      let csvContent = "data:text/csv;charset=utf-8,";
+  
+      // Agregar encabezados
+      csvContent += "Fecha, Total Recaudado\n $";
+      revenueData.forEach((item) => {
+        csvContent += `${item.fecha},${item.totalRecaudado}$\n`;
+      });
+  
+      csvContent += "\nProductos más vendidos\n";
+      csvContent += "Nombre del Producto, Cantidad Vendida\n";
+      topProducts.forEach((item) => {
+        csvContent += `${item.nombre_producto},${item.cantidadVendida}\n`;
+      });
+  
+      csvContent += "\nMétodos de Pago\n";
+      csvContent += "Tipo de Método de Pago,Porcentaje\n";
+      paymentMethods.forEach((item) => {
+        csvContent += `${item.tipo_metodo_pago},${item.porcentaje}%\n`;
+      });
+  
+      // Crear un Blob y un enlace para la descarga
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "estadisticas.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
 
   const handleBack = () => {
     navigate('/boxes'); // Redirige al usuario a /boxes
@@ -264,6 +292,12 @@ const StatisticsForm: React.FC = () => {
               )}
             </div>
           </section>
+
+          <section className="mb-8 text-center">
+              <button onClick={exportToCSV} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                Exportar Datos a CSV 📥
+              </button>
+            </section>
           </>
         )}
       </main>

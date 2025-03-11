@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "./Navbar";
 
+
 interface Product {
     id_producto: number;
     nombre_producto: string;
@@ -63,13 +64,20 @@ const ProductsPage = () => {
   const handleAddProduct = async () => {
     if (!nombre || !descripcion || precio === "" || precio <= 0) {
       setError("Todos los campos son obligatorios y el precio debe ser mayor a 0.");
+      toast.error("Todos los campos son obligatorios y el precio debe ser mayor a 0.");
+      return;
+    }
+  
+    if (descripcion.length < 10) {
+      setError("La descripción del producto debe tener al menos 10 caracteres.");
+      toast.error("La descripción debe tener al menos 10 caracteres.");
       return;
     }
   
     setLoading(true);
     setError("");
   
-    const  id_usuario = userId; // Obtener el id_usuario desde el AuthContext.
+    const id_usuario = userId; // Obtener el id_usuario desde el AuthContext.
   
     try {
       await axios.post(
@@ -94,16 +102,18 @@ const ProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  };  
   
 
   const handleEditProduct = async () => {
     if (!selectedProduct) {
       setError("Debes seleccionar un producto para editar.");
+      toast.error("Debes seleccionar un producto para editar.");
       return;
     }
     if (!nombre || !descripcion || !precio) {
       setError("Todos los campos son obligatorios.");
+      toast.error("Todos los campos son obligatorios.");
       return;
     }
 

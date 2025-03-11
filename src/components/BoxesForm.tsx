@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import {Producto} from "../types/index";
 import { useNavigate } from "react-router-dom";
+import {toast} from "sonner";
+import { Today } from "@mui/icons-material";
 
 interface List {
   id_lista: number;
@@ -40,7 +42,8 @@ const BoxesForm = () => {
     []
   );
   const [nombreCaja, setNombreCaja] = useState("");
-  const [fechaCaja, setFechaCaja] = useState("");
+  const today = new Date().toISOString().split("T")[0];
+  const [fechaCaja, setFechaCaja] = useState(today);
   const [estadoCaja, setEstadoCaja] = useState(true); 
   const [cargando, setCargando] = useState(true);
   const [listaSeleccionada, setListaSeleccionada] = useState<string | "">("");
@@ -221,19 +224,24 @@ const navigate = useNavigate();
 
   /* Crear caja */
   const handleCrearCaja = async () => {
+    if (!listaSeleccionada) {
+      toast.error("Debes seleccionar una lista de productos antes de crear la caja.");
+      return;
+    }
+  
     try {
       const token = localStorage.getItem("token");
-      const fechaTimestamp = new Date(fechaCaja).toISOString();
+      const fechaTimestamp = new Date(fechaCaja).toISOString().split("T")[0];
   
-      // Cambiar estadoCaja a "abierto" o "cerrado" según lo que se desee
-      const estado = estadoCaja ? "abierto" : "cerrado";  // Usando "abierto" si estadoCaja es true, o "cerrado" si es false
-
+      const estado = estadoCaja ? "abierto" : "cerrado";
+  
       const response = await axios.post(
         "http://localhost:3000/api/boxes/create",
         {
           nombre_caja: nombreCaja,
           fecha_apertura: fechaTimestamp,
-          estado: estado,  // Enviar "abierto" o "cerrado"
+          estado: estado,
+          id_lista: listaSeleccionada, // 🔹 Ahora enviamos la lista seleccionada
         },
         {
           headers: {
@@ -244,20 +252,20 @@ const navigate = useNavigate();
   
       console.log("Caja creada:", response.data);
   
-      // Obtener el id_caja de la respuesta
       const idCajaCreada = response.data.id_caja;
   
-      // Navegar a la página de ventas pasando id_lista en state
       navigate(`/sales/${idCajaCreada}`, { state: { id_lista: listaSeleccionada } });
   
       setNombreCaja("");
       setFechaCaja("");
-      setEstadoCaja(true); 
+      setEstadoCaja(true);
       setListaSeleccionada("");
   
       fetchCajas();
+      toast.success("Caja creada correctamente");
     } catch (error) {
       console.error("Error al crear la caja:", error);
+      toast.error("Hubo un error al crear la caja. Inténtalo nuevamente.");
     }
   };
   
@@ -409,13 +417,6 @@ const handleViewDetails = (id_caja: number) => {
           </h1>
           <div className="flex space-x-4">
             <button
-              className="bg-purple-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-purple-500"
-              onClick={() => navigate("/statistics")}
-            >
-              ESTADÍSTICAS
-              <ChartNoAxesCombined className="ml-2 w-5 h-5" />
-            </button>
-            <button
               className="bg-green-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-green-500"
               onClick={() => navigate("/product")}
             >
@@ -438,6 +439,13 @@ const handleViewDetails = (id_caja: number) => {
             >
               AGREGAR CAJA
               <PlusCircle className="ml-2 w-5 h-5" />
+            </button>
+            <button
+              className="bg-purple-400 text-black px-4 py-2 rounded-lg flex items-center hover:bg-purple-500"
+              onClick={() => navigate("/statistics")}
+            >
+              ESTADÍSTICAS
+              <ChartNoAxesCombined className="ml-2 w-5 h-5" />
             </button>
           </div>
         </div>
@@ -482,11 +490,12 @@ const handleViewDetails = (id_caja: number) => {
                     placeholder="Fecha de creación"
                     value={fechaCaja}
                     onChange={(e) => setFechaCaja(e.target.value)}
+
                     className="border rounded-lg px-4 py-2 text-black w-full"
                   />
                   <button
                     onClick={handleCrearCaja}
-                    className="bg-green-500 text-white w-full py-2 rounded-lg hover:bg-green-600"
+                    className="bg-orange-500 text-white w-full py-2 rounded-lg hover:bg-orange-600"
                   >
                     Crear Caja
                   </button>

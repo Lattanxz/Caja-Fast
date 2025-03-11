@@ -60,7 +60,7 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
   
         const response = await axios.get<Product[]>("http://localhost:3000/api/products", {
           headers: {
-            "X-User-ID": userId, // Agregar id_usuario como encabezado
+            "X-User-ID": userId, // Agregar id_usuario como encabezado  
           },
           params: {
             id_usuario: userId, // Enviar el userId en los parámetros
@@ -77,65 +77,73 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
       fetchLists();
       fetchProducts();
     }, [userId, token]); // Ejecutar cuando userId o token cambien
+
+
     
-  const handleSave = async () => {
-    if (!nombre) {
-      setError("El nombre de la lista es obligatorio.");
-      return;
-    }
-
-    if (productos.some((producto) => !producto.id_producto || isNaN(parseInt(producto.id_producto, 10)))) {
-      setError("Todos los productos deben tener un ID válido.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const requestBody = {
-        nombre_lista: nombre,
-        id_usuario: userId,
-        productos: productos.map((p) => ({
-          id_producto: parseInt(p.id_producto, 10),
-        })),
-      };
-
-      const response = await axios.post("http://localhost:3000/api/lists", requestBody, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const { id_lista } = response.data;
-
-      const productData = {
-        id_lista: id_lista,
-        id_usuario: userId,
-        productos: productos.map((producto) => ({
-          id_producto: parseInt(producto.id_producto, 10),
-          cantidad: producto.cantidad || 1,
-        })),
-      };
-
-      await axios.post("http://localhost:3000/api/listProducts", productData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setNombre("");
-      setProductos([]);
-      setShowForm(false);
-      onSave(nombre, productos);
-      onClose();
-      fetchLists();
-    } catch (err: any) {
-      setError("Error al guardar la lista. Intenta nuevamente.");
-      console.error("Error al crear la lista:", err);
-      if (err.response) {
-        setError(err.response.data.message || "Hubo un error inesperado.");
+    const handleSave = async () => {
+      if (!nombre) {
+        toast.error('El nombre de la lista no puede estar vacío.');  // Notificación de error con Sonner
+        return;
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+    
+      if (!allProducts || allProducts.length === 0) {
+        setError("Debe crear productos antes de poder crear una lista.");
+        return;
+      }
+    
+      if (productos.some((producto) => !producto.id_producto || isNaN(parseInt(producto.id_producto, 10)))) {
+        toast.error("Todos los productos deben tener un ID válido.");
+        return;
+      }
+    
+      setLoading(true);
+      setError("");
+    
+      try {
+        const requestBody = {
+          nombre_lista: nombre,
+          id_usuario: userId,
+          productos: productos.map((p) => ({
+            id_producto: parseInt(p.id_producto, 10),
+          })),
+        };
+    
+        const response = await axios.post("http://localhost:3000/api/lists", requestBody, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+    
+        const { id_lista } = response.data;
+    
+        const productData = {
+          id_lista: id_lista,
+          id_usuario: userId,
+          productos: productos.map((producto) => ({
+            id_producto: parseInt(producto.id_producto, 10),
+            cantidad: producto.cantidad || 1,
+          })),
+        };
+    
+        await axios.post("http://localhost:3000/api/listProducts", productData, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+    
+        setNombre("");
+        setProductos([]);
+        setShowForm(false);
+        onSave(nombre, productos);
+        onClose();
+        fetchLists();
+      } catch (err: any) {
+        setError("Error al guardar la lista. Intenta nuevamente.");
+        console.error("Error al crear la lista:", err);
+        if (err.response) {
+          setError(err.response.data.message || "Hubo un error inesperado.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
 
   const handleDelete = async (id_lista: number) => {
     try {
@@ -250,57 +258,79 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
 
               {/* Botón Agregar Lista alineado a la derecha */}
               <div className="flex justify-end">
-                <button
-                  className="bg-blue-500 text-white p-2 rounded" 
-                  onClick={() => setShowForm(true)}
-                >
-                  Agregar Lista
-                </button>
+              <button
+                className="bg-blue-500 text-white p-2 rounded"
+                onClick={() => {
+                  if (allProducts.length === 0) {
+                    setShowForm((prev) => !prev); // Alternar el modal de "No hay productos"
+                  } else {
+                    setShowForm((prev) => !prev); // Alternar el formulario de creación de listas
+                  }
+                }}
+              >
+                Agregar Lista
+              </button>
               </div>
             </div>
 
-              {showForm && (
+            {showForm && (
                 <div className="border p-4 rounded shadow-md mb-4 border-black">
-                  <h2 className="text-lg font-semibold mb-2">Crear Nueva Lista</h2>
-                  <input
-                    type="text"
-                    placeholder="Nombre de la lista"
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    className="border p-2 w-full rounded mb-2 border-black"
-                  />
-                  <select
-                    className="border p-2 w-full rounded mb-2 border-black"
-                    onChange={(e) => handleProductSelection(parseInt(e.target.value))}
-                  >
-                    <option value="">Selecciona un producto</option>
-                    {allProducts
-                      .filter((p) => !productos.some((pr) => pr.id_producto === p.id_producto))
-                      .map((producto) => (
-                        <option key={producto.id_producto} value={producto.id_producto}>
-                          {producto.nombre_producto}
-                        </option>
-                      ))}
-                  </select>
-                  <ul className="list-disc pl-5">
-                    {productos.map((producto) => (
-                      <li key={producto.id_producto} className="flex justify-between items-center border p-2 rounded">
-                        {producto.nombre_producto}
-                        <button className="text-red-500" onClick={() => handleRemoveProduct(producto.id_producto)}>
-                          X
+                  {allProducts.length === 0 ? (
+                    // ⚠️ Si no hay productos, muestra este mensaje en lugar del formulario
+                    <div className="text-center">
+                      <p className="text-lg font-semibold mb-2">No puedes crear una lista porque no tienes productos creados aún.</p>
+                      <button 
+                        className="bg-green-500 text-white p-2 rounded"
+                        onClick={() => window.location.href = "/product"} // Ajusta la URL a la de tu página de productos
+                      >
+                        Crear Productos
+                      </button>
+                    </div>
+                  ) : (
+                    // ✅ Si hay productos, muestra el formulario normal
+                    <>
+                      <h2 className="text-lg font-semibold mb-2">Crear Nueva Lista</h2>
+                      <input
+                        type="text"
+                        placeholder="Nombre de la lista"
+                        value={nombre}
+                        onChange={(e) => setNombre(e.target.value)}
+                        className="border p-2 w-full rounded mb-2 border-black"
+                      />
+                      <select
+                        className="border p-2 w-full rounded mb-2 border-black"
+                        onChange={(e) => handleProductSelection(parseInt(e.target.value))}
+                      >
+                        <option value="">Selecciona un producto</option>
+                        {allProducts
+                          .filter((p) => !productos.some((pr) => pr.id_producto === p.id_producto))
+                          .map((producto) => (
+                            <option key={producto.id_producto} value={producto.id_producto}>
+                              {producto.nombre_producto}
+                            </option>
+                          ))}
+                      </select>
+                      <ul className="list-disc pl-5">
+                        {productos.map((producto) => (
+                          <li key={producto.id_producto} className="flex justify-between items-center border p-2 rounded">
+                            {producto.nombre_producto}
+                            <button className="text-red-500" onClick={() => handleRemoveProduct(producto.id_producto)}>
+                              X
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                      {error && <p className="text-red-500">{error}</p>}
+                      <div className="flex gap-2 mt-2">
+                        <button className="bg-orange-500 text-white p-2 rounded" onClick={handleSave} disabled={loading}>
+                          {loading ? "Guardando..." : "Guardar Lista"}
                         </button>
-                      </li>
-                    ))}
-                  </ul>
-                  {error && <p className="text-red-500">{error}</p>}
-                  <div className="flex gap-2 mt-2">
-                    <button className="bg-orange-500 text-white p-2 rounded" onClick={handleSave} disabled={loading}>
-                      {loading ? "Guardando..." : "Guardar Lista"}
-                    </button>
-                    <button className="bg-red-500 text-white p-2 rounded" onClick={() => setShowForm(false)}>
-                      Cancelar
-                    </button>
-                  </div>
+                        <button className="bg-red-500 text-white p-2 rounded" onClick={() => setShowForm(false)}>
+                          Cancelar
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
                 <div className="space-y-4 h-[650px] overflow-y-auto p-4 border rounded">
