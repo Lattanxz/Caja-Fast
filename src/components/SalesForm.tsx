@@ -309,11 +309,14 @@ const handleAddSale = async () => {
     
     {/* Botones de navegación */}
     {/* Botones de navegación */}
-    <div className="flex justify-center space-x-60 mb-6">
-      <button onClick={() => navigate("/boxes")} className="bg-orange-500 text-black p-2 rounded">← Volver</button>
-      <button className="bg-orange-500 text-black p-2 rounded">Gestionar Lista Productos</button>
-      <button className="bg-orange-500 text-black p-2 rounded" onClick={handleCloseBox}>Cerrar Caja</button>
-    </div>
+    <div className="flex justify-between w-full mb-6">
+        <button onClick={() => navigate("/boxes")} className="bg-orange-500 text-black p-2 rounded">
+          ← Volver
+        </button>
+        <button className="bg-orange-500 text-black p-2 rounded" onClick={handleCloseBox}>
+          Cerrar Caja
+        </button>
+      </div>
     {/* Título */}
           <h2 className="text-2xl font-bold text-center mb-6 mt-6 border p-6 ">Nombre de la caja: {nombreCaja || 'Cargando...'}</h2>
 

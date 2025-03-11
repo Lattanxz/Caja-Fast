@@ -7,6 +7,7 @@ const Cajas = require("../models/cajas");
 const { sequelize } = require("../config/db");
 const { Op } = require("sequelize");
 
+
 // Crear USUARIO
 const createUser = async (req, res) => {
   const { nombre_usuario, email_usuario, password, id_rol, id_estado } = req.body;
@@ -125,35 +126,27 @@ const deleteUserById = async (req, res) => {
   const t = await sequelize.transaction(); // Usamos una transacción de Sequelize
 
   try {
-    // Verificar si existen cajas asociadas al id_usuario
-    const cajas = await Cajas.findAll({
+    // Verificar si existen cajas asociadas al id_usuario y eliminarlas
+    await Cajas.destroy({
       where: { id_usuario: id },
-      transaction: t, // Asociar la transacción
+      transaction: t,
     });
-
-    if (cajas.length > 0) {
-      // Si existen cajas, eliminarlas
-      await Cajas.destroy({
-        where: { id_usuario: id },
-        transaction: t,
-      });
-    }
 
     // Obtener las listas asociadas al id_usuario
     const listas = await Lista.findAll({
       where: { id_usuario: id },
-      attributes: ["id_lista"], // Solo obtener los id_lista
-      transaction: t, // Asociar la transacción
+      attributes: ["id_lista"],
+      transaction: t,
     });
 
-    // Eliminar las relaciones en productos_listas si existen
-    if (listas.length > 0) {
-      const idListas = listas.map((lista) => lista.id_lista);
+    const idListas = listas.map((lista) => lista.id_lista);
 
+    // Eliminar las relaciones en productos_listas si existen
+    if (idListas.length > 0) {
       await ProductoLista.destroy({
         where: {
           id_lista: {
-            [sequelize.Op.in]: idListas, // Usamos los id_lista obtenidos previamente
+            [Op.in]: idListas, // Usamos los id_lista obtenidos previamente
           },
         },
         transaction: t,
@@ -167,13 +160,13 @@ const deleteUserById = async (req, res) => {
     }
 
     // Eliminar el usuario
-    const usuario = await Usuario.destroy({
+    const usuarioEliminado = await Usuario.destroy({
       where: { id_usuario: id },
-      returning: true, // Para obtener el usuario eliminado
       transaction: t,
     });
 
-    if (usuario === 0) {
+    if (usuarioEliminado === 0) {
+      await t.rollback();
       return res.status(404).json({ mensaje: "Usuario no encontrado" });
     }
 
@@ -181,14 +174,13 @@ const deleteUserById = async (req, res) => {
     res.status(200).json({
       mensaje: "Usuario y sus datos asociados eliminados correctamente",
     });
-  } catch (err) {
+  } catch (error) {
     await t.rollback(); // Revertir si hay error
-    console.error(err);
-    res
-      .status(500)
-      .json({ mensaje: "Error al eliminar el usuario y sus datos" });
+    console.error("Error al eliminar el usuario:", error);
+    res.status(500).json({ mensaje: "Error al eliminar el usuario y sus datos" });
   }
 };
+
 
 module.exports = {
   getAllUsers,
