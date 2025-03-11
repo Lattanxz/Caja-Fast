@@ -11,12 +11,13 @@ interface Product {
     nombre_producto: string;
     descripcion_producto: string;
     precio_producto: number;
+    id_usuario: number;
   }
   
 
 const ProductsPage = () => {
   const [productos, setProductos] = useState<Product[]>([]);
-  const { isLoggedIn, userRole } = useAuth();
+  const { isLoggedIn, userRole, userId } = useAuth();
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [precio, setPrecio] = useState<number | "">("");
@@ -36,9 +37,14 @@ const ProductsPage = () => {
   const fetchProductos = async () => {
     setLoading(true);
     setError("");
+    const id_usuario = userId; // Obtener el id_usuario desde el AuthContext
+  
     try {
       const response = await axios.get("http://localhost:3000/api/products", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "X-User-ID": id_usuario, // Enviar id_usuario como un encabezado
+        },
       });
       console.log(response.data);
       setProductos(response.data);
@@ -49,16 +55,19 @@ const ProductsPage = () => {
       setLoading(false);
     }
   };
+  
 
   const handleAddProduct = async () => {
     if (!nombre || !descripcion || precio === "" || precio <= 0) {
       setError("Todos los campos son obligatorios y el precio debe ser mayor a 0.");
       return;
     }
-
+  
     setLoading(true);
     setError("");
-
+  
+    const  id_usuario = userId; // Obtener el id_usuario desde el AuthContext.
+  
     try {
       await axios.post(
         "http://localhost:3000/api/products",
@@ -66,10 +75,11 @@ const ProductsPage = () => {
           nombre_producto: nombre,
           descripcion_producto: descripcion,
           precio_producto: precio,
+          id_usuario: id_usuario, // Agregar el id_usuario
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
+  
       setNombre("");
       setDescripcion("");
       setPrecio("");
@@ -82,6 +92,7 @@ const ProductsPage = () => {
       setLoading(false);
     }
   };
+  
 
   const handleEditProduct = async () => {
     if (!selectedProduct) {

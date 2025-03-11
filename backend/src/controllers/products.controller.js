@@ -7,9 +7,20 @@ const Caja = require("../models/cajas");
 
 // Obtener todos los productos
 const getAllProducts = async (req, res) => {
+  const id_usuario = req.headers["x-user-id"]; // Obtener el id_usuario desde los encabezados de la solicitud
+
+  console.log('ID de usuario en backend:', id_usuario); // Verificar si se obtiene correctamente el id_usuario
+
+  if (!id_usuario) {
+    return res.status(400).json({ mensaje: "El ID del usuario es obligatorio." });
+  }
+
   try {
     const productos = await Producto.findAll({
-      attributes: ["id_producto", "nombre_producto", "descripcion_producto", "precio_producto"] // Devuelve id y nombre
+      where: {
+        id_usuario: id_usuario, // Filtrar los productos por id_usuario
+      },
+      attributes: ["id_producto", "nombre_producto", "descripcion_producto", "precio_producto"],
     });
 
     res.status(200).json(productos);
@@ -18,6 +29,8 @@ const getAllProducts = async (req, res) => {
     res.status(500).json({ mensaje: "Error al obtener productos" });
   }
 };
+
+
 
 // Obtener un producto por ID
 const getProductById = async (req, res) => {
@@ -42,11 +55,12 @@ const getProductById = async (req, res) => {
 };
 
 const createProduct = async (req, res) => {
-  const { nombre_producto, precio_producto, descripcion_producto } = req.body;
+  const { nombre_producto, precio_producto, descripcion_producto, id_usuario } = req.body;
 
   console.log('Datos recibidos:', req.body); // Verifica qué datos están llegando
 
-  if (!nombre_producto || !precio_producto || !descripcion_producto) {
+  // Validar que todos los campos sean proporcionados
+  if (!nombre_producto || !precio_producto || !descripcion_producto || !id_usuario) {
     return res.status(400).json({ mensaje: 'Todos los campos son obligatorios.' });
   }
 
@@ -55,6 +69,7 @@ const createProduct = async (req, res) => {
       nombre_producto,
       precio_producto,
       descripcion_producto,
+      id_usuario, // Asignar el id_usuario a la creación del producto
     });
 
     res.status(201).json(product);
@@ -63,6 +78,7 @@ const createProduct = async (req, res) => {
     res.status(500).json({ mensaje: "Error al crear el producto" });
   }
 };
+
 
 
 // Actualizar un producto

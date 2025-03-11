@@ -31,6 +31,14 @@ const Productos = sequelize.define(
         isFloat: true, // Asegura que sea un número decimal
       },
     },
+    id_usuario: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "usuarios", // Asegúrate de que esta tabla existe
+        key: "id_usuario",
+      },
+    },
   },
   {
     tableName: "productos", // Nombre de la tabla en la base de datos

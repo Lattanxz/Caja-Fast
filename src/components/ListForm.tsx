@@ -60,7 +60,10 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
   
         const response = await axios.get<Product[]>("http://localhost:3000/api/products", {
           headers: {
-            Authorization: `Bearer ${token}`,
+            "X-User-ID": userId, // Agregar id_usuario como encabezado
+          },
+          params: {
+            id_usuario: userId, // Enviar el userId en los parámetros
           },
         });
   
@@ -74,6 +77,7 @@ const ListasPage: React.FC<ListasPageProps> = ({ initialListas, onSave, onClose 
       fetchLists();
       fetchProducts();
     }, [userId, token]); // Ejecutar cuando userId o token cambien
+    
   const handleSave = async () => {
     if (!nombre) {
       setError("El nombre de la lista es obligatorio.");

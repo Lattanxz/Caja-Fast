@@ -121,26 +121,38 @@ const navigate = useNavigate();
     fetchListas();
   }, [userId]);
   
-
-
   const fetchProductos = async () => {
+    const  id_usuario = userId; // Obtener el id_usuario desde el AuthContext
+  
     try {
-      const response = await axios.get("http://localhost:3000/api/products");
+      const response = await axios.get("http://localhost:3000/api/products", {
+        headers: {
+          "X-User-ID": id_usuario, // Agregar id_usuario como encabezado
+        },
+      });
       setProductosDisponibles(response.data);
       console.log("Productos disponibles:", response.data);
     } catch (error) {
       console.error("Error al obtener los productos:", error);
     }
   };
-
+  
   useEffect(() => {
     fetchProductos();
   }, []);
 
-  useEffect(() => {
+   
+  useEffect(() => { 
     const fetchBoxesProducts = async () => {
+      const  id_usuario = useAuth(); // Obtener el id_usuario desde el AuthContext
+  
       try {
-        const response = await fetch("http://localhost:3000/api/products");
+        const response = await fetch("http://localhost:3000/api/products", {
+          headers: {
+            "X-User-ID": String(id_usuario), // Convertir id_usuario a string
+          },
+        });
+  
         if (!response.ok) throw new Error("Error al obtener productos");
   
         const data: Producto[] = await response.json();
@@ -276,7 +288,8 @@ const navigate = useNavigate();
       console.error("Error al decodificar el token:", error);
       throw new Error("No se pudo obtener el id_usuario desde el token");
     }
-  };  
+  };
+  
 
   const handleBoxProductos = async (nombreCaja: string, productosSeleccionados: Producto[]) => {
   try {
